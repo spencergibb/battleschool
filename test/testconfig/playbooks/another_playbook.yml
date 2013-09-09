@@ -1,0 +1,6 @@
+---
+- hosts: workstation
+
+  tasks:
+    - name: print from playbook
+      debug: msg="in another_playbook.yml"

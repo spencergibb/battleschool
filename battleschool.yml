@@ -1,5 +1,4 @@
 ---
-- include: ~/.battleschool/playbook.yml
 - hosts: workstation
   vars_files:
     - ~/.battleschool/config.yml

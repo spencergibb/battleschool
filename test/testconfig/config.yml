@@ -1,0 +1,11 @@
+---
+somevar: somevalue
+
+sources:
+  local:
+    - playbook.yml
+
+  git:
+    #- { name: 'osx', repo: 'https://github.com/spencergibb/ansible-osx' }
+    - name: 'osx'
+      repo: 'https://github.com/spencergibb/ansible-osx'
