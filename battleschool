@@ -1,0 +1,26 @@
+#!/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python
+#/usr/bin/env python
+
+#export PYTHONPATH=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages
+
+import ansible.playbook
+
+import subprocess
+import sys
+
+#TODO: verify environment: macports, ansible
+#TODO: dynamically combine roles into one place
+#TODO: dynamically combine playbooks into one place
+#TODO: use ansible api?
+
+def main(argv=sys.argv[1:]):
+    #app = VmShellApp()
+    #return app.run(argv)
+    print "battleschool"
+    command = "/opt/local/bin/ansible-playbook -i hosts battleschool.yml"
+    subprocess.call(command, shell=True)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
