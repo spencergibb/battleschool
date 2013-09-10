@@ -4,3 +4,11 @@
   tasks:
     - name: print from playbook
       debug: msg="in playbooks/playbook.yml"
+
+    - name: get time from user module
+      action: time
+      register: playbook_time
+
+    - name: print time from user module
+      debug: msg="time {{playbook_time.time}}"
+
