@@ -3,4 +3,4 @@
 
   tasks:
     - name: print from playbook
-      debug: msg="in ~/.battleschool/playbook.yml"
+      debug: msg="in playbooks/playbook.yml"

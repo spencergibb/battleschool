@@ -4,6 +4,7 @@ somevar: somevalue
 sources:
   local:
     - playbook.yml
+    - another_playbook.yml
 
   git:
     #- { name: 'osx', repo: 'https://github.com/spencergibb/ansible-osx' }

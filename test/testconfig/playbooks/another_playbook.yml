@@ -3,4 +3,4 @@
 
   tasks:
     - name: print from playbook
-      debug: msg="in another_playbook.yml"
+      debug: msg="in playbooks/another_playbook.yml"

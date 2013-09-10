@@ -14,12 +14,13 @@ from ansible import callbacks
 from ansible import utils
 from ansible.color import ANSIBLE_COLOR, stringc
 from ansible.callbacks import display
-from ansible.runner import Runner
+
+from battleschool.source.git import Git
+from battleschool.source.local import Local
 
 
 #TODO: verify environment: macports, ansible
 #TODO: dynamically combine roles into one place
-#TODO: dynamically combine playbooks into one place
 
 def colorize(lead, num, color):
     """ Print 'lead' = 'num' in 'color' """
@@ -27,6 +28,7 @@ def colorize(lead, num, color):
         return "%s%s%-15s" % (stringc(lead, color), stringc("=", color), stringc(str(num), color))
     else:
         return "%s=%-4s" % (lead, str(num))
+
 
 def hostcolor(host, stats, color=True):
     if ANSIBLE_COLOR and color:
@@ -37,6 +39,7 @@ def hostcolor(host, stats, color=True):
         else:
             return "%-37s" % stringc(host, 'green')
     return "%-26s" % host
+
 
 def main(args):
 
@@ -96,61 +99,24 @@ def main(args):
 
     if options.config_dir:
         battleschool_dir = options.config_dir
+    else:
+        options.config_dir = battleschool_dir
 
     config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
-    cache_dir = "%s/cache" % battleschool_dir
+    options.cache_dir = "%s/cache" % battleschool_dir
 
     if 'sources' in config_data:
         sources = config_data['sources']
-        #TODO: support for other sources
-        if 'git' in sources:
-            for git in sources['git']:
-                print git
-                runner_cb = callbacks.CliRunnerCallbacks()
-                runner_cb.options = options
-                runner_cb.options.module_name = 'git'
-                dest_dir = "%s/%s" % (cache_dir, git['name'])
-                #TODO: git update?
-                force = "no"
-                update = "no"
-                module_args = "repo=%s dest=%s force=%s update=%s" % \
-                              (git['repo'], dest_dir, force, update)
-                runner = Runner(
-                    pattern='workstation',
-                    module_name='git',
-                    module_path=options.module_path,
-                    module_args=module_args,
-                    inventory=inventory,
-                    callbacks=runner_cb,
-                    timeout=options.timeout,
-                    transport=options.connection,
-                    sudo=options.sudo,
-                    sudo_user=options.sudo_user,
-                    sudo_pass=sudopass,
-                    check=options.check,
-                    diff=options.diff,
-                    private_key_file=options.private_key_file,
-                    remote_user=options.remote_user,
-                    remote_pass=sshpass,
-                    forks=options.forks
-                )
+        #TODO: use reflection for source types
+        source = Git(options, sources)
+        playbooks = source.run(inventory, sshpass, sudopass)
+        for playbook in playbooks:
+            args.append(playbook)
 
-                try:
-                    results = runner.run()
-                    for result in results['contacted'].values():
-                        if 'failed' in result or result.get('rc', 0) != 0:
-                            sys.exit(2)
-                    if results['dark']:
-                        sys.exit(2)
-                except errors.AnsibleError, e:
-                    # Generic handler for ansible specific errors
-                    callbacks.display("ERROR: %s" % str(e), stderr=True, color='red')
-                    sys.exit(1)
-
-                playbook = "%s/site.yml" % dest_dir
-                if os.path.exists(playbook) and os.path.isfile(playbook):
-                    #TODO: add other playbooks relative to dest_dir from config.yml
-                    args.append(playbook)
+        source = Local(options, sources)
+        playbooks = source.run(inventory, sshpass, sudopass)
+        for playbook in playbooks:
+            args.append(playbook)
 
     for playbook in args:
         if not os.path.exists(playbook):
