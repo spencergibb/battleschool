@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#TODO: port to python
+
+OS=`uname`
+
+if [ "$OS" != "Darwin" ]
+then
+    echo "$0 only works on a mac right now"
+    exit 1
+fi
+
+WORK_DIR=tmp
+mkdir -p ${WORK_DIR}
+
+function checkPkg() {
+    PKG=$1
+    REQUIRED_VERSION=$2
+    VERSION=`pkgutil --pkg-info=${PKG} 2>&1 |grep version| awk '{print $2}'`
+
+    if [ "${VERSION}" = "" ]
+    then
+        echo ${PKG} is not installed
+        return
+    elif [ "${REQUIRED_VERSION}" != "" -a "${REQUIRED_VERSION}" != "${VERSION}" ]
+    then
+        echo ${PKG} required version ${REQUIRED_VERSION}, installed ${VERSION}
+        return
+    else
+        echo ${PKG} is already installed with version ${VERSION}
+        false
+    fi
+}
+
+function installPkg() {
+    URL="$1"
+    PKG_FILE="$2"
+    DMG="$3"
+    VOLUME="$4"
+    COOKIE="$5"
+
+    echo Installing ${PKG_FILE}
+
+    if [ "$COOKIE" != "" ]
+    then
+        wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
+    else
+        wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
+    fi
+
+    PGK_DIR=${WORK_DIR}
+    if [ "$DMG" != "" ]
+    then
+        hdiutil attach ${WORK_DIR}/${DMG}
+        PGK_DIR=${VOLUME}
+    fi
+
+    echo Enter sudo password if requested
+    sudo installer -pkg "${PGK_DIR}"/"${PKG_FILE}" -target /
+
+    if [ "$DMG" != "" ]
+    then
+        hdiutil unmount "${VOLUME}"
+    fi
+}
+
+#check if xcode command line tools are installed
+if checkPkg 'com.apple.pkg.DeveloperToolsCLI'; then
+    echo Please install the XCode command line tools
+    echo see http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac
+    exit 1
+fi
+
+#check if macports is installed
+if checkPkg 'org.macports.MacPorts'; then
+    PKG=MacPorts-2.2.0-10.8-MountainLion.pkg
+    URL=https://distfiles.macports.org/MacPorts/${PKG}
+
+    installPkg ${URL} "$PKG" ${DMG} "$VOLUME" ${COOKIE}
+
+    echo Enter sudo password if requested
+    sudo port -v selfupdate
+fi
+
+
+#test if ansible is installed
+ANSIBLE=`which ansible`
+if [ "${ANSIBLE}" == "" ]
+then
+    echo installing ansible
+    echo Enter sudo password if requested
+    sudo port install ansible
+else
+    echo ansible is already installed to ${ANSIBLE}
+fi

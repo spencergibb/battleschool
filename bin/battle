@@ -41,12 +41,25 @@ def hostcolor(host, stats, color=True):
     return "%-26s" % host
 
 
+def getSourceHandlers():
+    handlers = [Git, Local]
+    # for name, obj in inspect.getmembers(sourcepkg):
+    #     if inspect.ismodule(obj):
+    #         package = obj.__dict__['__package__']
+    #         if package is not None and package.startswith('battleschool.source'):
+    #             for srcName, srcObj in inspect.getmembers(obj):
+    #                 if inspect.isclass(srcObj) and srcName != 'Source':
+    #                     print "Loading %s/%s" % (srcName, srcObj)
+    #                     handlers.append(srcObj)
+    return handlers
+
+
 def main(args):
 
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
     # create parser for CLI options
-    usage = "%prog playbook.yml"
+    usage = "%prog"
     parser = utils.base_parser(
         constants=C,
         usage=usage,
@@ -105,18 +118,16 @@ def main(args):
     config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
     options.cache_dir = "%s/cache" % battleschool_dir
 
+    handlers = getSourceHandlers()
+
     if 'sources' in config_data:
         sources = config_data['sources']
-        #TODO: use reflection for source types
-        source = Git(options, sources)
-        playbooks = source.run(inventory, sshpass, sudopass)
-        for playbook in playbooks:
-            args.append(playbook)
 
-        source = Local(options, sources)
-        playbooks = source.run(inventory, sshpass, sudopass)
-        for playbook in playbooks:
-            args.append(playbook)
+        for handler in handlers:
+            source = handler(options, sources)
+            playbooks = source.run(inventory, sshpass, sudopass)
+            for playbook in playbooks:
+                args.append(playbook)
 
     for playbook in args:
         if not os.path.exists(playbook):
