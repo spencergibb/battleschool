@@ -20,7 +20,6 @@ from battleschool.source.local import Local
 
 
 #TODO: verify environment: macports, ansible
-#TODO: dynamically combine roles into one place
 
 def colorize(lead, num, color):
     """ Print 'lead' = 'num' in 'color' """
@@ -117,22 +116,23 @@ def main(args):
 
     config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
     options.cache_dir = "%s/cache" % battleschool_dir
-    user_module_path = "%s/modules" % battleschool_dir
-    if os.path.exists(user_module_path) and os.path.isdir(user_module_path):
-        if options.module_path is None:
-            options.module_path = C.DEFAULT_MODULE_PATH
-        options.module_path = "%s:%s" % (user_module_path, options.module_path)
 
     handlers = getSourceHandlers()
+
+    if options.module_path is None:
+        options.module_path = C.DEFAULT_MODULE_PATH
 
     if 'sources' in config_data:
         sources = config_data['sources']
 
         for handler in handlers:
             source = handler(options, sources)
-            playbooks = source.run(inventory, sshpass, sudopass)
+            playbooks, module_dir = source.run(inventory, sshpass, sudopass)
             for playbook in playbooks:
                 args.append(playbook)
+
+            if module_dir is not None and os.path.exists(module_dir) and os.path.isdir(module_dir):
+                options.module_path = "%s:%s" % (module_dir, options.module_path)
 
     for playbook in args:
         if not os.path.exists(playbook):

@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: time
+author: Spencer Gibb
+version_added: "1.2.2"
+short_description: Print the time
+description:
+    - Print the time
+options:
+    time:
+        required: false
+        description:
+            - Optionally sets the time to print
+'''
+
+# import some python modules that we'll use.  These are all
+# available in Python's core
+
+import datetime
+import sys
+import json
+import os
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            time=dict(default=None, type='str'),
+        ),
+        supports_check_mode=False
+    )
+
+    time = module.params['time']
+
+    if time:
+        # now we'll affect the change.  Many modules
+        # will strive to be 'idempotent', meaning they
+        # will only make changes when the desired state
+        # expressed to the module does not match
+        # the current state.  Look at 'service'
+        # or 'yum' in the main git tree for an example
+        # of how that might look.
+
+        #rc = os.system("date -s \"%s\"" % time)
+        rc = os.system("gdate -s \"%s\"" % time)
+
+        # always handle all possible errors
+        #
+        # when returning a failure, include 'failed'
+        # in the return data, and explain the failure
+        # in 'msg'.  Both of these conventions are
+        # required however additional keys and values
+        # can be added.
+
+        if rc != 0:
+            print json.dumps({
+                "failed": True,
+                "msg":    "failed setting the time"
+            })
+            sys.exit(1)
+
+        # when things do not fail, we do not
+        # have any restrictions on what kinds of
+        # data are returned, but it's always a
+        # good idea to include whether or not
+        # a change was made, as that will allow
+        # notifiers to be used in playbooks.
+
+        date = str(datetime.datetime.now())
+        print json.dumps({
+            "time":    date,
+            "changed": True
+        })
+        sys.exit(0)
+
+    else:
+        # if no parameters are sent, the module may or
+        # may not error out, this one will just
+        # return the time
+
+        date = str(datetime.datetime.now())
+        print json.dumps({
+            "time": date
+        })
+
+# include magic from lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

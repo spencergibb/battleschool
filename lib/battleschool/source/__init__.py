@@ -45,6 +45,7 @@ class Source(object):
                 runner_cb.options = self.options
                 runner_cb.options.module_name = self.module_name()
                 module_args = self.module_args(source)
+                #TODO: get workstation from options
                 runner = Runner(
                     pattern='workstation',
                     module_name=self.type(),
@@ -77,9 +78,14 @@ class Source(object):
                     callbacks.display("ERROR: %s" % str(e), stderr=True, color='red')
                     sys.exit(1)
 
-                playbook = "%s/site.yml" % self.dest_dir(source)
+                playbook = "%s/local.yml" % self.dest_dir(source)
                 if os.path.exists(playbook) and os.path.isfile(playbook):
-                    #TODO: add other playbooks relative to dest_dir from config.yml
                     playbooks.append(playbook)
 
-        return playbooks
+                #TODO: add other playbooks relative to dest_dir from config.yml
+
+                module_dir = "%s/modules" % self.dest_dir(source)
+                if not os.path.exists(module_dir) or not os.path.isfile(module_dir):
+                    module_dir = None
+
+        return playbooks, module_dir

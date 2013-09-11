@@ -6,7 +6,7 @@
       debug: msg="in playbooks/playbook.yml"
 
     - name: get time from user module
-      action: time
+      action: time-test
       register: playbook_time
 
     - name: print time from user module
