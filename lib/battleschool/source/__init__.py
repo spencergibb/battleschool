@@ -78,11 +78,19 @@ class Source(object):
                     callbacks.display("ERROR: %s" % str(e), stderr=True, color='red')
                     sys.exit(1)
 
-                playbook = "%s/local.yml" % self.dest_dir(source)
-                if os.path.exists(playbook) and os.path.isfile(playbook):
-                    playbooks.append(playbook)
+                source_playbooks = ["local.yml"]
 
-                #TODO: add other playbooks relative to dest_dir from config.yml
+                #add other playbooks relative to dest_dir from config.yml
+                if "playbooks" in source:
+                    for playbook_name in source['playbooks']:
+                        if playbook_name not in source_playbooks:
+                            source_playbooks.append(playbook_name)
+
+                for playbook_name in source_playbooks:
+                    playbook = "%s/%s" % (self.dest_dir(source), playbook_name)
+                    if os.path.exists(playbook) and os.path.isfile(playbook):
+                        playbooks.append(playbook)
+
 
                 module_dir = "%s/modules" % self.dest_dir(source)
                 if not os.path.exists(module_dir) or not os.path.isfile(module_dir):

@@ -10,3 +10,5 @@ sources:
     #- { name: 'osx', repo: 'https://github.com/spencergibb/ansible-osx' }
     - name: 'osx'
       repo: 'https://github.com/spencergibb/ansible-osx'
+      playbooks:
+         - test.yml
