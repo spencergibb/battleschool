@@ -90,7 +90,7 @@ def main(args):
 
     options, args = parser.parse_args(args)
 
-    playbooks_to_run = ['battleschool.yml']
+    playbooks_to_run = [C.DEFAULT_PLAYBOOK]
 
     inventory = ansible.inventory.Inventory(options.inventory)
     inventory.subset(options.subset)
