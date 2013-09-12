@@ -40,7 +40,7 @@ class Source(object):
         playbooks = []
         if self.type() in self.sources:
             for source in self.sources[self.type()]:
-                print source
+                # print source
                 runner_cb = callbacks.CliRunnerCallbacks()
                 runner_cb.options = self.options
                 runner_cb.options.module_name = self.module_name()
@@ -92,8 +92,8 @@ class Source(object):
                         playbooks.append(playbook)
 
 
-                module_dir = "%s/modules" % self.dest_dir(source)
-                if not os.path.exists(module_dir) or not os.path.isfile(module_dir):
-                    module_dir = None
+                # module_dir = "%s/modules" % self.dest_dir(source)
+                # if not os.path.exists(module_dir) or not os.path.isfile(module_dir):
+                #     module_dir = None
 
-        return playbooks, module_dir
+        return playbooks, None

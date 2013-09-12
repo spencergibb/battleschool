@@ -51,8 +51,8 @@ post-destroot {
 
   # install sample config and hosts file
   xinstall -m 755 -d ${destroot}${prefix}/etc/battleschool
-  xinstall -m 644 ${worksrcpath}/hosts ${destroot}${prefix}/etc/battleschool/hosts
-  xinstall -m 644 ${worksrcpath}/battleschool.yml ${destroot}${prefix}/etc/battleschool/battleschool.yml
+  xinstall -m 644 ${worksrcpath}/etc/hosts ${destroot}${prefix}/etc/battleschool/hosts
+  xinstall -m 644 ${worksrcpath}/etc/battleschool.yml ${destroot}${prefix}/etc/battleschool/battleschool.yml
 }
 
 python.link_binaries_suffix
