@@ -133,12 +133,9 @@ def main(args):
 
         for handler in handlers:
             source = handler(options, sources)
-            playbooks, module_dir = source.run(inventory, sshpass, sudopass)
+            playbooks = source.run(inventory, sshpass, sudopass)
             for playbook in playbooks:
                 playbooks_to_run.append(playbook)
-
-            if module_dir is not None and os.path.exists(module_dir) and os.path.isdir(module_dir):
-                options.module_path = "%s:%s" % (module_dir, options.module_path)
 
     for playbook in playbooks_to_run:
         if not os.path.exists(playbook):

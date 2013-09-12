@@ -91,9 +91,4 @@ class Source(object):
                     if os.path.exists(playbook) and os.path.isfile(playbook):
                         playbooks.append(playbook)
 
-
-                # module_dir = "%s/modules" % self.dest_dir(source)
-                # if not os.path.exists(module_dir) or not os.path.isfile(module_dir):
-                #     module_dir = None
-
-        return playbooks, None
+        return playbooks
