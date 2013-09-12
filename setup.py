@@ -11,15 +11,15 @@ from distutils.core import setup
 # find library modules
 from battleschool.constants import DIST_MODULE_PATH
 
-library_path = "./library/"
-files = os.listdir(library_path)
+share_path = "./share/"
+files = os.listdir(share_path)
 data_files = []
 for i in files:
-    if os.path.isdir(os.path.join(library_path, i)):
-        data_files.append((DIST_MODULE_PATH + i, glob('./library/' + i + '/*')))
+    if os.path.isdir(os.path.join(share_path, i)):
+        data_files.append((DIST_MODULE_PATH + i, glob(share_path + i + '/*')))
 
-    if os.path.isfile(os.path.join(library_path, i)):
-        data_files.append((DIST_MODULE_PATH, glob('./library/*')))
+    if os.path.isfile(os.path.join(share_path, i)):
+        data_files.append((DIST_MODULE_PATH, glob(share_path + '*')))
 
 setup(name='battleschool',
       version=__version__,
