@@ -1,0 +1,191 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+DOCUMENTATION = '''
+---
+module: mac_pkg
+author: Spencer Gibb
+short_description: Installs Mac pkg files
+description:
+    - Installs Mac pkg files, optionally mounting/unmounting dmg
+version_added: "1.1"
+options:
+    name:
+        description:
+            - name of package to install/remove
+        required: true
+    state:
+        description:
+            - state of the package
+        choices: [ 'present', 'absent' ]
+        required: false
+        default: present
+    required_version:
+        description:
+            - version of the package that is required
+        required: false
+    url:
+        description:
+            - url of pkg or dmg containing pkg
+        required: true
+    dest:
+        description:
+            - destination of downloaded file
+        required: true
+    cookie:
+        description:
+            - cookie to send to download
+        required: false
+notes:  []
+'''
+EXAMPLES = '''
+- mac_pkg: name=foo state=present
+- mac_pkg: name=foo state=present update_cache=yes
+'''
+
+import os
+
+#TODO: install from local file rather than url
+
+
+def remove_packages(module, pkgutil_path, packages):
+    """ Uninstalls one or more packages if installed. """
+
+    # remove_c = 0
+    # # Using a for loop incase of error, we can report the package that failed
+    # for package in packages:
+    #     # Query the package first, to see if we even need to remove
+    #     if not query_package(module, pkgutil_path, package):
+    #         continue
+    #
+    #     rc, out, err = module.run_command("%s uninstall %s" % (pkgutil_path, package))
+    #
+    #     if query_package(module, pkgutil_path, package):
+    #         module.fail_json(msg="failed to remove %s: %s" % (package, out))
+    #
+    #     remove_c += 1
+    #
+    # if remove_c > 0:
+    #
+    #     module.exit_json(changed=True, msg="removed %s package(s)" % remove_c)
+
+    module.exit_json(changed=False, msg="package(s) already absent")
+
+
+def install_package(module, pkgutil_path, hdiutil_path, pkg):
+    """ Installs a package if not already installed. """
+
+    curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
+    installer_path = module.get_bin_path('installer', True, ['/usr/sbin'])
+
+    #find installed version
+    rc, out, err = module.run_command("%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
+                                      (pkgutil_path, pkg))
+    if rc > 0:
+        module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+    version = out.strip()
+
+    required_version = None
+
+    params = module.params
+    if 'required_version' in params and params['required_version'] is not None:
+        required_version = params['required_version']
+
+    #if version is empty or not specified version, install
+    if not version or (required_version is not None and version != required_version):
+        # module.exit_json(changed=False, msg="ver: '%s', req: %s" % (version, required_version))
+
+        #TODO: use get_url code to download
+        #get pkg from url
+        #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
+        #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
+        #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
+        #TODO: verify url
+        url = params['url']
+        #TODO: verify write perms of dest parent
+        dest = params['dest']
+
+        cookie = ""
+
+        if 'cookie' in params:
+            cookie = "--cookie %s" % params['cookie']
+
+        #TODO: implement force
+        if not os.path.exists(dest):
+            rc, out, err = module.run_command("%s --insecure --silent --location --output %s %s %s" %
+                                              (curl_path, dest, cookie, url))
+            if rc > 0:
+                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+        is_dmg = 'dmg_package' in params and params['dmg_package'] is not None
+        dmg_volume = None
+
+        # module.exit_json(changed=False, msg="is_dmg: %s %s" % (is_dmg, params['dmg_package']))
+
+        pkg_path = dest
+
+        if is_dmg:
+            #if dmg mount and record volume path
+            #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
+            rc, out, err = module.run_command("%s attach %s | grep Volumes" % (hdiutil_path, dest))
+            if rc > 0:
+                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+            idx = out.index("/Volumes/")
+            dmg_volume = out[idx:].strip()
+            dmg_package = params['dmg_package']
+            pkg_path = "\"%s\"/\"%s\"" % (dmg_volume, dmg_package)
+
+        # module.exit_json(changed=False, msg="dmg_volume: '%s', %s" % (dmg_volume, pkg_path))
+
+        #install package file
+        #installer -pkg "${PGK_DIR}"/"${PKG_FILE}" -target /
+        #TODO: support target param
+        rc, out, err = module.run_command("%s -pkg %s -target /" % (installer_path, pkg_path))
+        if rc > 0:
+            module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+        #if dmg unmount
+        if is_dmg:
+            rc, out, err = module.run_command("%s unmount \"%s\"" % (hdiutil_path, dmg_volume))
+            if rc > 0:
+                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+        module.exit_json(changed=True, msg="installed package %s" % pkg)
+
+    module.exit_json(changed=False, msg="package %s already present" % pkg)
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            name=dict(aliases=["pkg"], required=True),
+            state=dict(default="present", choices=["present", "installed", "absent", "removed", "active", "inactive"]),
+            url=dict(aliases=[], required=True),
+            dest=dict(aliases=["destination"], required=True),
+            required_version=dict(aliases=[], required=False),
+            cookie=dict(aliases=[], required=False),
+            dmg_package=dict(aliases=["dmg_pkg"], required=False),
+        )
+    )
+
+    pkgutil_path = module.get_bin_path('pkgutil', True, ['/usr/sbin'])
+    hdiutil_path = module.get_bin_path('hdiutil', True, ['/usr/bin'])
+
+    p = module.params
+
+    pkg = p["name"]
+
+    if p["state"] in ["present", "installed"]:
+        install_package(module, pkgutil_path, hdiutil_path, pkg)
+
+    #TODO: implement remove
+    elif p["state"] in ["absent", "removed"]:
+    #remove_package(module, pkgutil_path, pkg)
+        module.fail_json(changed=False, msg="remove package %s, using %s NOT IMPLEMENTED" % (pkg, pkgutil_path))
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+
+main()
