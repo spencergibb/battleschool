@@ -7,13 +7,14 @@ import os
 import sys
 
 import ansible.playbook
-import ansible.constants as C
+import ansible.constants as AC
 import ansible.utils.template
 from ansible import errors
 from ansible import callbacks
 from ansible import utils
 from ansible.color import ANSIBLE_COLOR, stringc
 from ansible.callbacks import display
+import battleschool.constants as C
 
 from battleschool.source.git import Git
 from battleschool.source.local import Local
@@ -57,10 +58,12 @@ def main(args):
 
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
+    AC.DEFAULT_HOST_LIST = C.DEFAULT_HOST_LIST
+
     # create parser for CLI options
     usage = "%prog"
     parser = utils.base_parser(
-        constants=C,
+        constants=AC,
         usage=usage,
         connect_opts=True,
         runas_opts=True,
@@ -87,9 +90,9 @@ def main(args):
 
     options, args = parser.parse_args(args)
 
-    args = ['battleschool.yml']
+    playbooks_to_run = ['battleschool.yml']
 
-    inventory = ansible.inventory.Inventory("hosts")
+    inventory = ansible.inventory.Inventory(options.inventory)
     inventory.subset(options.subset)
     if len(inventory.list_hosts()) == 0:
         raise errors.AnsibleError("provided hosts list is empty")
@@ -97,12 +100,12 @@ def main(args):
     sshpass = None
     sudopass = None
     if not options.listhosts and not options.syntax and not options.listtasks:
-        options.ask_pass = C.DEFAULT_ASK_PASS
-        options.ask_sudo_pass = options.ask_sudo_pass or C.DEFAULT_ASK_SUDO_PASS
+        options.ask_pass = AC.DEFAULT_ASK_PASS
+        options.ask_sudo_pass = options.ask_sudo_pass or AC.DEFAULT_ASK_SUDO_PASS
         ( sshpass, sudopass ) = utils.ask_passwords(ask_pass=options.ask_pass, ask_sudo_pass=options.ask_sudo_pass)
         if options.sudo_user or options.ask_sudo_pass:
             options.sudo = True
-        options.sudo_user = options.sudo_user or C.DEFAULT_SUDO_USER
+        options.sudo_user = options.sudo_user or AC.DEFAULT_SUDO_USER
     if options.extra_vars and options.extra_vars[0] in '[{':
         extra_vars = utils.json_loads(options.extra_vars)
     else:
@@ -120,7 +123,7 @@ def main(args):
     handlers = getSourceHandlers()
 
     if options.module_path is None:
-        options.module_path = C.DEFAULT_MODULE_PATH
+        options.module_path = AC.DEFAULT_MODULE_PATH
 
     if 'sources' in config_data:
         sources = config_data['sources']
@@ -129,19 +132,19 @@ def main(args):
             source = handler(options, sources)
             playbooks, module_dir = source.run(inventory, sshpass, sudopass)
             for playbook in playbooks:
-                args.append(playbook)
+                playbooks_to_run.append(playbook)
 
             if module_dir is not None and os.path.exists(module_dir) and os.path.isdir(module_dir):
                 options.module_path = "%s:%s" % (module_dir, options.module_path)
 
-    for playbook in args:
+    for playbook in playbooks_to_run:
         if not os.path.exists(playbook):
             raise errors.AnsibleError("the playbook: %s could not be found" % playbook)
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
     # run all playbooks specified on the command line
-    for playbook in args:
+    for playbook in playbooks_to_run:
 
         # let inventory know which playbooks are using so it can know the basedirs
         inventory.set_playbook_basedir(os.path.dirname(playbook))

@@ -31,6 +31,7 @@ depends_lib-append      port:ansible
 patch {
     fs-traverse f ${worksrcpath} {
         if {[file isfile ${f}]} {
+            reinplace -locale C "s#/etc/battleschool#${prefix}/etc/battleschool#g" ${f}
             reinplace -locale C "s#/usr/share/battleschool#${prefix}/share/battleschool#g" ${f}
         }
     }
@@ -47,6 +48,10 @@ post-destroot {
   # man pages
   #xinstall -d 644 ${destroot}${prefix}/share/man/man1
   #eval xinstall -m 755 [glob ${worksrcpath}/docs/man/man1/*.1] ${destroot}${prefix}/share/man/man1
+
+  # install sample config and hosts file
+  xinstall -m 755 -d ${destroot}${prefix}/etc/battleschool
+  xinstall -m 755 ${worksrcpath}/hosts ${destroot}${prefix}/etc/battleschool/hosts
 }
 
 python.link_binaries_suffix
