@@ -125,6 +125,9 @@ def main(args):
     if options.module_path is None:
         options.module_path = AC.DEFAULT_MODULE_PATH
 
+    if C.DEFAULT_MODULE_PATH not in options.module_path:
+        options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
+
     if 'sources' in config_data:
         sources = config_data['sources']
 
