@@ -13,7 +13,8 @@ from battleschool.constants import DIST_MODULE_PATH
 dirs = os.listdir("./library/")
 data_files = []
 for i in dirs:
-    data_files.append((DIST_MODULE_PATH + i, glob('./library/' + i + '/*')))
+    #data_files.append((DIST_MODULE_PATH + i, glob('./library/' + i + '/*')))
+    data_files.append((DIST_MODULE_PATH + i, glob('./library/*')))
 
 setup(name='battleschool',
       version=__version__,
