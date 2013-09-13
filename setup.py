@@ -18,8 +18,8 @@ for i in files:
     if os.path.isdir(os.path.join(share_path, i)):
         data_files.append((DIST_MODULE_PATH + i, glob(share_path + i + '/*')))
 
-    if os.path.isfile(os.path.join(share_path, i)):
-        data_files.append((DIST_MODULE_PATH, share_path + i))
+    #if os.path.isfile(os.path.join(share_path, i)):
+    #    data_files.append((DIST_MODULE_PATH, share_path + i))
 
 setup(name='battleschool',
       version=__version__,
