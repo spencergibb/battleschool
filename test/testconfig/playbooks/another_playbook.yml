@@ -4,3 +4,14 @@
   tasks:
     - name: print from playbook
       debug: msg="in playbooks/another_playbook.yml"
+
+    - name: print os version
+      debug: msg="mac_major_minor_version  = {{mac_major_minor_version }}, ansible_distribution = {{ansible_distribution}}, ansible_distribution_version = {{ansible_distribution_version}}"
+
+    - name: pring mountain lion
+      debug: msg="Mountain Lion"
+      when: mac_major_minor_version == "10.8"
+
+    - name: pring lion
+      debug: msg="Lion"
+      when: mac_major_minor_version  == "10.7"

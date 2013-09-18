@@ -5,6 +5,7 @@
 
 import os
 import sys
+import subprocess
 
 import ansible.playbook
 import ansible.constants as AC
@@ -119,6 +120,15 @@ def main(args):
 
     config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
     options.cache_dir = "%s/cache" % battleschool_dir
+
+    output = subprocess.check_output(["/usr/bin/sw_vers", "-productVersion"])
+    mac_version = output.split()[-1].split(".")
+
+    if extra_vars is None:
+        extra_vars = dict()
+
+    extra_vars['mac_version'] = mac_version
+    extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 
     handlers = getSourceHandlers()
 

@@ -27,16 +27,16 @@ options:
     url:
         description:
             - url of pkg or dmg containing pkg
-        required: true
+        required: false
     dest:
         description:
-            - destination of downloaded file
-        required: true
+            - destination of downloaded file, required for url
+        required: false
     cookie:
         description:
             - cookie to send to download
         required: false
-notes:  []
+notes:  [one of url or src are required]
 '''
 EXAMPLES = '''
 - mac_pkg: name=foo state=present
@@ -44,8 +44,6 @@ EXAMPLES = '''
 '''
 
 import os
-
-#TODO: install from local file rather than url
 
 
 def remove_packages(module, pkgutil_path, packages):
@@ -71,9 +69,19 @@ def remove_packages(module, pkgutil_path, packages):
 
     module.exit_json(changed=False, msg="package(s) already absent")
 
+def exists(dict, key):
+    """ is key in dict and is dict[key] not none """
+    if key in dict and dict[key] is not None:
+        return True
+
+    return False
 
 def install_package(module, pkgutil_path, hdiutil_path, pkg):
     """ Installs a package if not already installed. """
+    params = module.params
+
+    if not exists(params, 'src') and not exists(params, 'url'):
+        module.fail_json(msg="one of src or url must not be empty")
 
     curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
     installer_path = module.get_bin_path('installer', True, ['/usr/sbin'])
@@ -88,47 +96,55 @@ def install_package(module, pkgutil_path, hdiutil_path, pkg):
 
     required_version = None
 
-    params = module.params
-    if 'required_version' in params and params['required_version'] is not None:
+    if exists(params, 'required_version'):
         required_version = params['required_version']
 
     #if version is empty or not specified version, install
     if not version or (required_version is not None and version != required_version):
         # module.exit_json(changed=False, msg="ver: '%s', req: %s" % (version, required_version))
 
-        #TODO: use get_url code to download
-        #get pkg from url
-        #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
-        #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
-        #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
-        #TODO: verify url
-        url = params['url']
-        #TODO: verify write perms of dest parent
-        dest = params['dest']
+        pkg_path = None
 
-        cookie = ""
+        if exists(params, 'src'):
+            src = params['src']
 
-        if 'cookie' in params:
-            cookie = "--cookie %s" % params['cookie']
+            pkg_path = src
+            # module.exit_json(changed=False, msg="src: '%s'" % src)
 
-        #TODO: implement force
-        if not os.path.exists(dest):
-            rc, out, err = module.run_command("%s --insecure --silent --location --output %s %s %s" %
-                                              (curl_path, dest, cookie, url))
-            if rc > 0:
-                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+        else:
+            #TODO: use get_url code to download
+            #get pkg from url
+            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
+            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
+            #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
+            #TODO: verify url
+            url = params['url']
+            #TODO: verify write perms of dest parent
+            dest = params['dest']
 
-        is_dmg = 'dmg_package' in params and params['dmg_package'] is not None
+            cookie = ""
+
+            if 'cookie' in params:
+                cookie = "--cookie %s" % params['cookie']
+
+            #TODO: implement force
+            if not os.path.exists(dest):
+                rc, out, err = module.run_command("%s --insecure --silent --location --output %s %s %s" %
+                                                  (curl_path, dest, cookie, url))
+                if rc > 0:
+                    module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+
+            pkg_path = dest
+
+        is_dmg = exists(params, 'dmg_package')
         dmg_volume = None
 
         # module.exit_json(changed=False, msg="is_dmg: %s %s" % (is_dmg, params['dmg_package']))
 
-        pkg_path = dest
-
         if is_dmg:
             #if dmg mount and record volume path
             #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
-            rc, out, err = module.run_command("%s attach %s | grep Volumes" % (hdiutil_path, dest))
+            rc, out, err = module.run_command("%s attach %s | grep Volumes" % (hdiutil_path, pkg_path))
             if rc > 0:
                 module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
 
@@ -152,9 +168,9 @@ def install_package(module, pkgutil_path, hdiutil_path, pkg):
             if rc > 0:
                 module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
 
-        module.exit_json(changed=True, msg="installed package %s" % pkg)
+        module.exit_json(changed=True, version=version, msg="installed package %s" % pkg)
 
-    module.exit_json(changed=False, msg="package %s already present" % pkg)
+    module.exit_json(changed=False, version=version, msg="package %s already present" % pkg)
 
 
 def main():
@@ -162,8 +178,9 @@ def main():
         argument_spec=dict(
             name=dict(aliases=["pkg"], required=True),
             state=dict(default="present", choices=["present", "installed", "absent", "removed", "active", "inactive"]),
-            url=dict(aliases=[], required=True),
-            dest=dict(aliases=["destination"], required=True),
+            src=dict(aliases=["source"], required=False),
+            url=dict(aliases=[], required=False),
+            dest=dict(aliases=["destination"], required=False),
             required_version=dict(aliases=[], required=False),
             cookie=dict(aliases=[], required=False),
             dmg_package=dict(aliases=["dmg_pkg"], required=False),
