@@ -10,33 +10,13 @@ description:
     - Installs Mac pkg files, optionally mounting/unmounting dmg
 version_added: "1.1"
 options:
-    name:
-        description:
-            - name of package to install/remove
-        required: true
     state:
         description:
             - state of the package
         choices: [ 'present', 'absent' ]
         required: false
         default: present
-    required_version:
-        description:
-            - version of the package that is required
-        required: false
-    url:
-        description:
-            - url of pkg or dmg containing pkg
-        required: false
-    dest:
-        description:
-            - destination of downloaded file, required for url
-        required: false
-    cookie:
-        description:
-            - cookie to send to download
-        required: false
-notes:  [one of url or src are required]
+notes:  []
 '''
 EXAMPLES = '''
 - mac_pkg: name=foo state=present
@@ -44,30 +24,201 @@ EXAMPLES = '''
 '''
 
 import os
+import abc
 
 
-def remove_packages(module, pkgutil_path, packages):
-    """ Uninstalls one or more packages if installed. """
+class Archive(object):
 
-    # remove_c = 0
-    # # Using a for loop incase of error, we can report the package that failed
-    # for package in packages:
-    #     # Query the package first, to see if we even need to remove
-    #     if not query_package(module, pkgutil_path, package):
-    #         continue
-    #
-    #     rc, out, err = module.run_command("%s uninstall %s" % (pkgutil_path, package))
-    #
-    #     if query_package(module, pkgutil_path, package):
-    #         module.fail_json(msg="failed to remove %s: %s" % (package, out))
-    #
-    #     remove_c += 1
-    #
-    # if remove_c > 0:
-    #
-    #     module.exit_json(changed=True, msg="removed %s package(s)" % remove_c)
+    __metaclass__ = abc.ABCMeta
 
-    module.exit_json(changed=False, msg="package(s) already absent")
+    def __init__(self, module, pkg):
+        self.module = module
+        self.params = module.params
+        self.curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
+        self.pkg = pkg
+        return
+
+    @abc.abstractmethod
+    def open(self):
+        """ Open the archive """
+
+    @abc.abstractmethod
+    def pkg_path(self):
+        """ get the path to page after the archive is 'opened' """
+
+    def clone(self):
+        """ close the archive """
+        pass
+
+    def acquire(self):
+        if exists(self.params, 'src'):
+            src = self.params['src']
+
+            self._pkg_path = src
+            # module.exit_json(changed=False, msg="src: '%s'" % src)
+        else:
+            #TODO: use get_url code to download
+            #get pkg from url
+            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
+            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
+            #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
+            #TODO: verify url
+            url = self.params['url']
+            #TODO: verify write perms of dest parent
+            dest = self.params['dest']
+
+            cookie = ""
+
+            if 'cookie' in self.params:
+                cookie = "--cookie %s" % self.params['cookie']
+
+            #TODO: implement force
+            if not os.path.exists(dest):
+                rc, out, err = self.module.run_command("%s --insecure --silent --location --output %s %s %s" %
+                                                       (self.curl_path, dest, cookie, url))
+                if rc > 0:
+                    self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+
+            self._pkg_path = dest
+
+
+class ZipArchive(Archive):
+
+    def open(self):
+        pass
+
+    def pkg_path(self):
+        pass
+
+    def close(self):
+        pass
+
+
+class DmgArchive(Archive):
+
+    def __init__(self, module, pkg):
+        super(DmgArchive, self).__init__(module, pkg)
+        self.hdiutil_path = module.get_bin_path('hdiutil', True, ['/usr/bin'])
+        self.dmg_volume = None
+
+    def open(self):
+        #if dmg mount and record volume path
+        #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
+        rc, out, err = self.module.run_command("%s attach %s | grep Volumes" % (self.hdiutil_path, self._pkg_path))
+        if rc > 0:
+            self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+
+        idx = out.index("/Volumes/")
+        self.dmg_volume = out[idx:].strip()
+        dmg_path = self.params['dmg_path']
+        self._pkg_path = "\"%s\"/\"%s\"" % (self.dmg_volume, dmg_path)
+        # self.module.exit_json(changed=False, msg="pkg_path %s, dmg_path %s" % (self.pkg_path, dmg_path))
+
+    def pkg_path(self):
+        return self._pkg_path
+
+    def close(self):
+        rc, out, err = self.module.run_command("%s unmount \"%s\"" % (self.hdiutil_path, self.dmg_volume))
+        if rc > 0:
+            self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+
+
+class NoneArchive(Archive):
+
+    def open(self):
+        pass
+
+    def pkg_path(self):
+        return self.params['dest']
+
+    def close(self):
+        pass
+
+
+class Package(object):
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, module):
+        self.module = module
+        self.params = module.params
+        return
+
+    @abc.abstractmethod
+    def install(self, pkg_path):
+        """ Install the package """
+
+    @abc.abstractmethod
+    def is_installed(self):
+        """ Is the package installed """
+
+    @abc.abstractmethod
+    def name(self):
+        """ the name of the package """
+
+    @abc.abstractmethod
+    def version(self):
+        """ the version of the package """
+
+
+class PkgPackage(Package):
+
+    def __init__(self, module):
+        super(PkgPackage, self).__init__(module)
+        self.installer_path = module.get_bin_path('installer', True, ['/usr/sbin'])
+        self.pkgutil_path = module.get_bin_path('pkgutil', True, ['/usr/sbin'])
+
+        #find installed version
+        self._pkg_name = self.params['pkg_name']
+        rc, out, err = module.run_command("%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
+                                          (self.pkgutil_path, self._pkg_name))
+        if rc > 0:
+            module.fail_json(msg="failed to install %s: %s %s" % (self._pkg_name, out, err))
+
+        self._version = out.strip()
+
+    def install(self, pkg_path):
+        #install package file
+        #installer -pkg "${PGK_DIR}"/"${PKG_FILE}" -target /
+        #TODO: support target param
+        rc, out, err = self.module.run_command("%s -pkg %s -target /" % (self.installer_path, pkg_path))
+        if rc > 0:
+            self.module.fail_json(msg="failed to install %s: %s %s" % (pkg_path, out, err))
+
+    def is_installed(self):
+        pkg_version = None
+        if exists(self.params, 'pkg_version'):
+            pkg_version = self.params['pkg_version']
+
+        if pkg_version is not None:
+            return self._version == pkg_version
+
+        if self._version:
+            return True
+
+        return False
+
+    def name(self):
+        return self._pkg_name
+
+    def version(self):
+        return self._version
+
+
+class AppPackage(Package):
+
+    def install(self, pkg_path):
+        pass
+
+    def is_installed(self):
+        return True
+
+    def name(self):
+        return "TODO: app name"
+
+    def version(self):
+        return "TODO: app version"
+
 
 def exists(dict, key):
     """ is key in dict and is dict[key] not none """
@@ -76,126 +227,76 @@ def exists(dict, key):
 
     return False
 
-def install_package(module, pkgutil_path, hdiutil_path, pkg):
-    """ Installs a package if not already installed. """
-    params = module.params
 
-    if not exists(params, 'src') and not exists(params, 'url'):
-        module.fail_json(msg="one of src or url must not be empty")
+class Installer(object):
 
-    curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
-    installer_path = module.get_bin_path('installer', True, ['/usr/sbin'])
+    def __init__(self, module):
+        self.module = module
+        self.params = module.params
 
-    #find installed version
-    rc, out, err = module.run_command("%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
-                                      (pkgutil_path, pkg))
-    if rc > 0:
-        module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+    def install(self):
+        pkg = self._instantiate('pkg_type', 'Package')
 
-    version = out.strip()
-
-    required_version = None
-
-    if exists(params, 'required_version'):
-        required_version = params['required_version']
-
-    #if version is empty or not specified version, install
-    if not version or (required_version is not None and version != required_version):
-        # module.exit_json(changed=False, msg="ver: '%s', req: %s" % (version, required_version))
-
-        pkg_path = None
-
-        if exists(params, 'src'):
-            src = params['src']
-
-            pkg_path = src
-            # module.exit_json(changed=False, msg="src: '%s'" % src)
-
+        if pkg.is_installed():
+            self.module.exit_json(changed=False, version=pkg.version(), msg="package %s already present" % pkg.name())
         else:
-            #TODO: use get_url code to download
-            #get pkg from url
-            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
-            #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
-            #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
-            #TODO: verify url
-            url = params['url']
-            #TODO: verify write perms of dest parent
-            dest = params['dest']
 
-            cookie = ""
+            archive = self._instantiate('archive_type', 'Archive', pkg)
 
-            if 'cookie' in params:
-                cookie = "--cookie %s" % params['cookie']
+            archive.acquire()
 
-            #TODO: implement force
-            if not os.path.exists(dest):
-                rc, out, err = module.run_command("%s --insecure --silent --location --output %s %s %s" %
-                                                  (curl_path, dest, cookie, url))
-                if rc > 0:
-                    module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+            archive.open()
 
-            pkg_path = dest
+            pkg.install(archive.pkg_path())
 
-        is_dmg = exists(params, 'dmg_package')
-        dmg_volume = None
+            archive.close()
+            #self.module.exit_json(changed=False, msg="pkg %s, archive %s" % (pkg, archive))
+            self.module.exit_json(changed=True,  version=pkg.version(), msg="installed package %s" % pkg.name())
 
-        # module.exit_json(changed=False, msg="is_dmg: %s %s" % (is_dmg, params['dmg_package']))
+    def _instantiate(self, class_key, class_suffix, pkg=None):
+        class_name = "%s%s" % (self.params[class_key].title(), class_suffix)
+        m = __import__(self.__module__)
+        klass = getattr(m, class_name)
 
-        if is_dmg:
-            #if dmg mount and record volume path
-            #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
-            rc, out, err = module.run_command("%s attach %s | grep Volumes" % (hdiutil_path, pkg_path))
-            if rc > 0:
-                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
+        if pkg is None:
+            instance = klass(self.module)
+        else:
+            instance = klass(self.module, pkg)
 
-            idx = out.index("/Volumes/")
-            dmg_volume = out[idx:].strip()
-            dmg_package = params['dmg_package']
-            pkg_path = "\"%s\"/\"%s\"" % (dmg_volume, dmg_package)
+        return instance
 
-        # module.exit_json(changed=False, msg="dmg_volume: '%s', %s" % (dmg_volume, pkg_path))
+    def validate(self):
+        if self.params['pkg_type'] == "app" and self.params['archive_type'] == "none":
+            self.module.fail_json(msg="pkg_type can not = 'app' with archive_type = 'none'")
 
-        #install package file
-        #installer -pkg "${PGK_DIR}"/"${PKG_FILE}" -target /
-        #TODO: support target param
-        rc, out, err = module.run_command("%s -pkg %s -target /" % (installer_path, pkg_path))
-        if rc > 0:
-            module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
-
-        #if dmg unmount
-        if is_dmg:
-            rc, out, err = module.run_command("%s unmount \"%s\"" % (hdiutil_path, dmg_volume))
-            if rc > 0:
-                module.fail_json(msg="failed to install %s: %s\n\t%s" % (pkg, out, err))
-
-        module.exit_json(changed=True, version=version, msg="installed package %s" % pkg)
-
-    module.exit_json(changed=False, version=version, msg="package %s already present" % pkg)
+        if not exists(self.params, 'src') and not exists(self.params, 'url'):
+            self.module.fail_json(msg="one of src or url must not be empty")
 
 
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            name=dict(aliases=["pkg"], required=True),
-            state=dict(default="present", choices=["present", "installed", "absent", "removed", "active", "inactive"]),
+            state=dict(default="present", choices=["present", "installed"]),
+            archive_type=dict(default="none", choices=["zip", "dmg", "none"]),
             src=dict(aliases=["source"], required=False),
-            url=dict(aliases=[], required=False),
             dest=dict(aliases=["destination"], required=False),
-            required_version=dict(aliases=[], required=False),
+            url=dict(aliases=[], required=False),
             cookie=dict(aliases=[], required=False),
-            dmg_package=dict(aliases=["dmg_pkg"], required=False),
+            dmg_path=dict(required=False),
+            pkg_type=dict(default="pkg", choices=["pkg", "app"]),
+            pkg_name=dict(required=False),
+            pkg_version=dict(required=False),
         )
     )
 
-    pkgutil_path = module.get_bin_path('pkgutil', True, ['/usr/sbin'])
-    hdiutil_path = module.get_bin_path('hdiutil', True, ['/usr/bin'])
-
     p = module.params
 
-    pkg = p["name"]
+    installer = Installer(module)
+
+    installer.validate()
 
     if p["state"] in ["present", "installed"]:
-        install_package(module, pkgutil_path, hdiutil_path, pkg)
+        installer.install()
 
     #TODO: implement remove
     elif p["state"] in ["absent", "removed"]:

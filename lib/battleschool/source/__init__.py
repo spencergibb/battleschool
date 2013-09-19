@@ -38,7 +38,7 @@ class Source(object):
 
     def run(self, inventory, sshpass, sudopass):
         playbooks = []
-        if self.type() in self.sources:
+        if self.type() in self.sources and self.sources[self.type()] is not None:
             for source in self.sources[self.type()]:
                 # print source
                 runner_cb = callbacks.CliRunnerCallbacks()
