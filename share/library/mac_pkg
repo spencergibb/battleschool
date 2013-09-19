@@ -42,9 +42,8 @@ class Archive(object):
     def open(self):
         """ Open the archive """
 
-    @abc.abstractmethod
     def pkg_path(self):
-        """ get the path to page after the archive is 'opened' """
+        return self._pkg_path
 
     def clone(self):
         """ close the archive """
@@ -114,9 +113,6 @@ class DmgArchive(Archive):
         self._pkg_path = "\"%s\"/\"%s\"" % (self.dmg_volume, dmg_path)
         # self.module.exit_json(changed=False, msg="pkg_path %s, dmg_path %s" % (self.pkg_path, dmg_path))
 
-    def pkg_path(self):
-        return self._pkg_path
-
     def close(self):
         rc, out, err = self.module.run_command("%s unmount \"%s\"" % (self.hdiutil_path, self.dmg_volume))
         if rc > 0:
@@ -127,9 +123,6 @@ class NoneArchive(Archive):
 
     def open(self):
         pass
-
-    def pkg_path(self):
-        return self.params['dest']
 
     def close(self):
         pass
