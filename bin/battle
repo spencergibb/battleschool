@@ -127,6 +127,8 @@ def main(args):
     if extra_vars is None:
         extra_vars = dict()
 
+    extra_vars['battleschool_config_dir'] = battleschool_dir
+    extra_vars['battleschool_cache_dir'] = options.cache_dir
     extra_vars['mac_version'] = mac_version
     extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 

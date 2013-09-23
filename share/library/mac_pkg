@@ -23,8 +23,10 @@ EXAMPLES = '''
 - mac_pkg: name=foo state=present update_cache=yes
 '''
 
-import os
 import abc
+import os
+import shutil
+import tempfile
 
 
 class Archive(object):
@@ -83,14 +85,22 @@ class Archive(object):
 
 class ZipArchive(Archive):
 
-    def open(self):
-        pass
+    def __init__(self, module, pkg):
+        super(ZipArchive, self).__init__(module, pkg)
+        self.unzip_path = module.get_bin_path('unzip', True, ['/usr/bin'])
+        #TODO: override target_dir
+        self.target_dir = tempfile.mkdtemp(suffix='-zip-extract', prefix='mac_pkg-')
 
-    def pkg_path(self):
-        pass
+    def open(self):
+        # self.module.exit_json(changed=False, msg="unzip_path %s, pkg_path %s, target_dir %s, archive_path %s"
+        #       % (self.unzip_path, self.pkg_path(), self.target_dir, self.params['archive_path']))
+        rc, out, err = self.module.run_command("%s %s -d %s" % (self.unzip_path, self.pkg_path(), self.target_dir))
+        if rc > 0:
+            self.module.fail_json(msg="failed to unzip %s: %s\n\t%s" % (self.pkg_path(), out, err))
+        self._pkg_path = "%s/%s" % (self.target_dir, self.params['archive_path'])
 
     def close(self):
-        pass
+        shutil.rmtree(self.target_dir)
 
 
 class DmgArchive(Archive):
@@ -109,9 +119,9 @@ class DmgArchive(Archive):
 
         idx = out.index("/Volumes/")
         self.dmg_volume = out[idx:].strip()
-        dmg_path = self.params['dmg_path']
-        self._pkg_path = "\"%s\"/\"%s\"" % (self.dmg_volume, dmg_path)
-        # self.module.exit_json(changed=False, msg="pkg_path %s, dmg_path %s" % (self.pkg_path, dmg_path))
+        archive_path = self.params['archive_path']
+        self._pkg_path = "\"%s\"/\"%s\"" % (self.dmg_volume, archive_path)
+        # self.module.exit_json(changed=False, msg="pkg_path %s, archive_path %s" % (self.pkg_path, archive_path))
 
     def close(self):
         rc, out, err = self.module.run_command("%s unmount \"%s\"" % (self.hdiutil_path, self.dmg_volume))
@@ -275,7 +285,7 @@ def main():
             dest=dict(aliases=["destination"], required=False),
             url=dict(aliases=[], required=False),
             cookie=dict(aliases=[], required=False),
-            dmg_path=dict(required=False),
+            archive_path=dict(required=False),
             pkg_type=dict(default="pkg", choices=["pkg", "app"]),
             pkg_name=dict(required=False),
             pkg_version=dict(required=False),
