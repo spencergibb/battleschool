@@ -28,6 +28,8 @@ import os
 import shutil
 import tempfile
 
+from os import path
+
 
 class Archive(object):
 
@@ -58,25 +60,48 @@ class Archive(object):
             self._pkg_path = src
             # module.exit_json(changed=False, msg="src: '%s'" % src)
         else:
-            #TODO: use get_url code to download
             #get pkg from url
             #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
             #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c ${URL}
             #curl --location --insecure --cookie gpw_e24=http%3A%2F%2Fwww.oracle.com
             #TODO: verify url
             url = self.params['url']
+
+            curl_opts = ""
+
+            if exists(self.params, 'curl_opts'):
+                curl_opts = self.params['curl_opts']
+
+            #TODO: use environment variable to override cachedir
+            download_dir = path.expanduser("~/.battleschool/cache/downloads")
+            if not path.exists(download_dir):
+                os.makedirs(download_dir)
+
+            output_opts = ""
+            pre_cmd = ""
+
             #TODO: verify write perms of dest parent
+            # if exists(self.params, 'dest'):
             dest = self.params['dest']
 
-            cookie = ""
+            if not path.isabs(dest):
+                dest = "%s/%s" % (download_dir, dest)
 
-            if 'cookie' in self.params:
-                cookie = "--cookie %s" % self.params['cookie']
+            output_opts = "--output %s" % dest
+            # else:
+            #     pre_cmd = "cd %s && " % download_dir
+            #     output_opts = "--remote-name --remote-header-name"
 
-            #TODO: implement force
-            if not os.path.exists(dest):
-                rc, out, err = self.module.run_command("%s --insecure --silent --location --output %s %s %s" %
-                                                       (self.curl_path, dest, cookie, url))
+            # self.module.exit_json(changed=False, msg="pre_cmd %s, output_opts %s, curl_opts %s"
+            #                                          % (pre_cmd, output_opts, curl_opts))
+
+            #force delete
+            if path.exists(dest) and self.params['force']:
+                os.unlink(dest)
+
+            if not path.exists(dest):
+                rc, out, err = self.module.run_command("%s %s --insecure --silent --location %s %s %s" %
+                                                       (pre_cmd, self.curl_path, output_opts, curl_opts, url))
                 if rc > 0:
                     self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
 
@@ -224,7 +249,7 @@ class AppPackage(Package):
         shutil.copytree(pkg_path, self._app_creates)
 
     def is_installed(self):
-        return os.path.exists(self._app_creates)
+        return path.exists(self._app_creates)
 
     def name(self):
         return self._app_creates
@@ -292,9 +317,10 @@ def main():
             state=dict(default="present", choices=["present", "installed"]),
             archive_type=dict(default="none", choices=["zip", "dmg", "none"]),
             src=dict(aliases=["source"], required=False),
-            dest=dict(aliases=["destination"], required=False),
             url=dict(aliases=[], required=False),
-            cookie=dict(aliases=[], required=False),
+            dest=dict(aliases=["destination"], required=False),
+            force=dict(default='no', type='bool'),
+            curl_opts=dict(aliases=[], required=False),
             archive_path=dict(required=False),
             pkg_type=dict(default="pkg", choices=["pkg", "app"]),
             pkg_name=dict(required=False),
