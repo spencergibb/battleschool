@@ -210,17 +210,27 @@ class PkgPackage(Package):
 
 class AppPackage(Package):
 
+    def __init__(self, module):
+        super(AppPackage, self).__init__(module)
+        if exists(self.params, 'app_creates'):
+            self._app_creates = self.params['app_creates']
+        elif exists(self.params, 'archive_path'):
+            # TODO: parameterize app destination
+            self._app_creates = '/Applications/%s' % self.params['archive_path']
+        else:
+            self.module.fail_json(msg="for pkg_type=app one of app_creates or archive_path must not be empty")
+
     def install(self, pkg_path):
-        pass
+        shutil.copytree(pkg_path, self._app_creates)
 
     def is_installed(self):
-        return True
+        return os.path.exists(self._app_creates)
 
     def name(self):
-        return "TODO: app name"
+        return self._app_creates
 
     def version(self):
-        return "TODO: app version"
+        return "N/A"
 
 
 def exists(dict, key):
@@ -289,6 +299,7 @@ def main():
             pkg_type=dict(default="pkg", choices=["pkg", "app"]),
             pkg_name=dict(required=False),
             pkg_version=dict(required=False),
+            app_creates=dict(required=False),
         )
     )
 
