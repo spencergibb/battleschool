@@ -41,7 +41,7 @@ class Source(object):
         if self.type() in self.sources and self.sources[self.type()] is not None:
             for source in self.sources[self.type()]:
                 # print source
-                runner_cb = callbacks.CliRunnerCallbacks()
+                runner_cb = callbacks.DefaultRunnerCallbacks()
                 runner_cb.options = self.options
                 runner_cb.options.module_name = self.module_name()
                 module_args = self.module_args(source)

@@ -18,7 +18,7 @@
                state=present
                url=https://edelivery.oracle.com/otn-pub/java/jdk/7u25-b15/jdk-7u25-macosx-x64.dmg
                dest=/tmp/jdk7.dmg
-               cookie=gpw_e24=http%3A%2F%2Fwww.oracle.com
+               curl_opts='--cookie gpw_e24=http%3A%2F%2Fwww.oracle.com'
                archive_path='JDK 7 Update 25.pkg'
       sudo: yes
 

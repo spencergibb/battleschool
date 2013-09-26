@@ -16,9 +16,8 @@ The top level of the directory would contain files and directories like so:
     roles/                    # standard ansible role hierarchy
     modules/                  # remote module definitions
 
+TODO: Consolidated simple cli output
 
 TODO: Docs
 
-TODO: Build system
-
-TODO: mac pkg module
+TODO: Submit mac port

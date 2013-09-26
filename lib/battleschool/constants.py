@@ -23,4 +23,5 @@ else:
 DEFAULT_MODULE_PATH = get_config('BATTLESCHOOL_LIBRARY', DIST_MODULE_PATH)
 DEFAULT_HOST_LIST = os.path.expanduser(get_config('BATTLESCHOOL_HOSTS', os.path.join(DIST_CONFIG_PATH, 'hosts')))
 DEFAULT_PLAYBOOK = os.path.expanduser(get_config('BATTLESCHOOL_PLAYBOOK', os.path.join(DIST_MODULE_PATH, 'battleschool.yml')))
+DEFAULT_CALLBACK_PLUGIN_PATH = os.path.expanduser(get_config('BATTLESCHOOL_CALLBACK_PLUGINS', os.path.join(DIST_MODULE_PATH, 'callback_plugins')))
 

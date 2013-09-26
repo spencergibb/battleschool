@@ -7,40 +7,25 @@ import os
 import sys
 import subprocess
 
-import ansible.playbook
 import ansible.constants as AC
-import ansible.utils.template
-from ansible import errors
-from ansible import callbacks
-from ansible import utils
-from ansible.color import ANSIBLE_COLOR, stringc
-from ansible.callbacks import display
 import battleschool.constants as C
 
+#before callbacks import
+AC.DEFAULT_CALLBACK_PLUGIN_PATH = C.DEFAULT_CALLBACK_PLUGIN_PATH
+
+import ansible.playbook
+import ansible.utils.template
+from ansible import callbacks
+from ansible import errors
+from ansible import utils
+from ansible.callbacks import display
+
+from battleschool.printing import *
 from battleschool.source.git import Git
 from battleschool.source.local import Local
 
 
 #TODO: verify environment: macports, ansible
-
-def colorize(lead, num, color):
-    """ Print 'lead' = 'num' in 'color' """
-    if num != 0 and ANSIBLE_COLOR and color is not None:
-        return "%s%s%-15s" % (stringc(lead, color), stringc("=", color), stringc(str(num), color))
-    else:
-        return "%s=%-4s" % (lead, str(num))
-
-
-def hostcolor(host, stats, color=True):
-    if ANSIBLE_COLOR and color:
-        if stats['failures'] != 0 or stats['unreachable'] != 0:
-            return "%-37s" % stringc(host, 'red')
-        elif stats['changed'] != 0:
-            return "%-37s" % stringc(host, 'yellow')
-        else:
-            return "%-37s" % stringc(host, 'green')
-    return "%-26s" % host
-
 
 def getSourceHandlers():
     handlers = [Git, Local]
@@ -155,17 +140,19 @@ def main(args):
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
+    stats = callbacks.AggregateStats()
+
     # run all playbooks specified on the command line
     for playbook in playbooks_to_run:
 
         # let inventory know which playbooks are using so it can know the basedirs
         inventory.set_playbook_basedir(os.path.dirname(playbook))
 
-        stats = callbacks.AggregateStats()
-        playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
+        runner_cb = BattleschoolRunnerCallbacks()
+        playbook_cb = BattleschoolCallbacks()
+
         if options.step:
             playbook_cb.step = options.step
-        runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
         pb = ansible.playbook.PlayBook(
             playbook=playbook,
@@ -230,42 +217,24 @@ def main(args):
             pb.run()
 
             hosts = sorted(pb.stats.processed.keys())
-            display(callbacks.banner("PLAY RECAP"))
+            # display(callbacks.banner("PLAY RECAP"))
             playbook_cb.on_stats(pb.stats)
 
-            for h in hosts:
-                t = pb.stats.summarize(h)
-                if t['unreachable'] > 0 or t['failures'] > 0:
-                    failed_hosts.append(h)
+            for host in hosts:
+                smry = pb.stats.summarize(host)
+                if smry['unreachable'] > 0 or smry['failures'] > 0:
+                    failed_hosts.append(host)
 
             if len(failed_hosts) > 0:
                 filename = pb.generate_retry_inventory(failed_hosts)
                 if filename:
                     display("           to retry, use: --limit @%s\n" % filename)
 
-            for h in hosts:
-                t = pb.stats.summarize(h)
+            for host in hosts:
+                smry = pb.stats.summarize(host)
+                print_stats(host, smry)
 
-                display("%s : %s %s %s %s" % (
-                    hostcolor(h, t),
-                    colorize('ok', t['ok'], 'green'),
-                    colorize('changed', t['changed'], 'yellow'),
-                    colorize('unreachable', t['unreachable'], 'red'),
-                    colorize('failed', t['failures'], 'red')),
-                        screen_only=True
-                )
-
-                display("%s : %s %s %s %s" % (
-                    hostcolor(h, t, False),
-                    colorize('ok', t['ok'], None),
-                    colorize('changed', t['changed'], None),
-                    colorize('unreachable', t['unreachable'], None),
-                    colorize('failed', t['failures'], None)),
-                        log_only=True
-                )
-
-
-            print ""
+            # print ""
             if len(failed_hosts) > 0:
                 return 2
 
@@ -273,6 +242,8 @@ def main(args):
             display("ERROR: %s" % e, color='red')
             return 1
 
+    display(banner("Battleschool completed"), color="bright gray")
+    # TODO: aggregate stats accross playbook runs
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
