@@ -21,7 +21,7 @@ The top level of the directory would contain files and directories like so:
     roles/                    # standard ansible role hierarchy
     library/                  # remote module definitions
 
-TODO: Polish cli output
+TODO: polish cli output
 
 TODO: Docs
 
