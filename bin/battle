@@ -72,7 +72,7 @@ def main(args):
                       dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
-    parser.add_option('-u', '--update-vcs', dest='update_vcs',
+    parser.add_option('-u', '--update-vcs', dest='update_vcs', default=False, action='store_true',
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
 
     options, args = parser.parse_args(args)
@@ -128,6 +128,7 @@ def main(args):
         options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
 
     if 'sources' in config_data:
+        display(banner("Updating sources"))
         sources = config_data['sources']
 
         for handler in handlers:

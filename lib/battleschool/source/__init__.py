@@ -1,3 +1,5 @@
+from battleschool.printing import BattleschoolRunnerCallbacks
+
 __author__ = 'spencergibb'
 
 
@@ -5,8 +7,10 @@ import abc
 import os
 import sys
 
-from ansible import callbacks
+import battleschool.printing
+
 from ansible import errors
+from ansible.callbacks import display
 from ansible.runner import Runner
 
 
@@ -41,7 +45,7 @@ class Source(object):
         if self.type() in self.sources and self.sources[self.type()] is not None:
             for source in self.sources[self.type()]:
                 # print source
-                runner_cb = callbacks.DefaultRunnerCallbacks()
+                runner_cb = BattleschoolRunnerCallbacks()
                 runner_cb.options = self.options
                 runner_cb.options.module_name = self.module_name()
                 module_args = self.module_args(source)
@@ -71,16 +75,16 @@ class Source(object):
                     results = runner.run()
                     for result in results['contacted'].values():
                         if 'failed' in result or result.get('rc', 0) != 0:
-                            callbacks.display("ERROR: failed source type (%s) '%s': %s" % (self.type(), module_args, result['msg']),
+                            display("ERROR: failed source type (%s) '%s': %s" % (self.type(), module_args, result['msg']),
                                               stderr=True, color='red')
                             sys.exit(2)
                     if results['dark']:
-                        callbacks.display("ERROR: failed source type (%s) '%s': DARK" % (self.type(), module_args),
+                        display("ERROR: failed source type (%s) '%s': DARK" % (self.type(), module_args),
                                           stderr=True, color='red')
                         sys.exit(2)
                 except errors.AnsibleError, e:
                     # Generic handler for ansible specific errors
-                    callbacks.display("ERROR: %s" % str(e), stderr=True, color='red')
+                    display("ERROR: %s" % str(e), stderr=True, color='red')
                     sys.exit(1)
 
                 source_playbooks = ["local.yml"]
