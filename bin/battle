@@ -62,9 +62,6 @@ def main(args):
                       help="set additional key=value variables from the CLI")
     parser.add_option('--tags', dest='tags', default='all',
                       help="only run plays and tasks tagged with these values")
-    # FIXME: list hosts is a common option and can be moved to utils/__init__.py
-    parser.add_option('--list-hosts', dest='listhosts', action='store_true',
-                      help="dump out a list of hosts, each play will run against, does not run playbook!")
     parser.add_option('--syntax-check', dest='syntax', action='store_true',
                       help="do a playbook syntax check on the playbook, do not execute the playbook")
     parser.add_option('--list-tasks', dest='listtasks', action='store_true',
@@ -242,8 +239,8 @@ def main(args):
             display("ERROR: %s" % e, color='red')
             return 1
 
-    display(banner("Battleschool completed"), color="bright gray")
-    # TODO: aggregate stats accross playbook runs
+    display(banner("Battleschool completed"))
+    # TODO: aggregate stats across playbook runs
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

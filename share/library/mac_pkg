@@ -5,9 +5,9 @@ DOCUMENTATION = '''
 ---
 module: mac_pkg
 author: Spencer Gibb
-short_description: Installs Mac pkg files
+short_description: Installs Mac packages
 description:
-    - Installs Mac pkg files, optionally mounting/unmounting dmg
+    - Installs Mac .pkg or .app files, optionally unarchiving the package first
 version_added: "1.1"
 options:
     state:
@@ -24,6 +24,7 @@ EXAMPLES = '''
 '''
 
 import abc
+import hashlib
 import os
 import shutil
 import tempfile
@@ -77,33 +78,56 @@ class Archive(object):
             if not path.exists(download_dir):
                 os.makedirs(download_dir)
 
-            output_opts = ""
-            pre_cmd = ""
-
             #TODO: verify write perms of dest parent
-            # if exists(self.params, 'dest'):
-            dest = self.params['dest']
+            if exists(self.params, 'dest'):
+                dest = self.params['dest']
 
-            if not path.isabs(dest):
-                dest = "%s/%s" % (download_dir, dest)
+                if not path.isabs(dest):
+                    dest = "%s/%s" % (download_dir, dest)
 
-            output_opts = "--output %s" % dest
-            # else:
-            #     pre_cmd = "cd %s && " % download_dir
-            #     output_opts = "--remote-name --remote-header-name"
+                pre_cmd = ""
+                output_opts = "--output %s" % dest
+                do_download = not path.exists(dest)
+            else:
+                sha1 = hashlib.sha1(url).hexdigest()
+                dest = "%s/%s" % (download_dir, sha1)
+                if not path.exists(dest):
+                    os.makedirs(dest)
+                do_download = not os.listdir(dest)
+                pre_cmd = "cd %s && " % dest
+                output_opts = "--remote-name --remote-header-name"
 
-            # self.module.exit_json(changed=False, msg="pre_cmd %s, output_opts %s, curl_opts %s"
-            #                                          % (pre_cmd, output_opts, curl_opts))
+            # self.module.exit_json(changed=False, msg="pre_cmd %s, output_opts %s, curl_opts %s, do_download %s"
+            #                                          % (pre_cmd, output_opts, curl_opts, do_download))
 
             #force delete
             if path.exists(dest) and self.params['force']:
-                os.unlink(dest)
+                do_download = True
+                if path.isfile(dest):
+                    os.unlink(dest)
+                elif path.isdir(dest):
+                    files = os.listdir(dest)
+                    for file in files:
+                        file_path = "%s/%s" % (dest, file)
+                        os.unlink(file_path)
 
-            if not path.exists(dest):
+            if do_download:
                 rc, out, err = self.module.run_command("%s %s --insecure --silent --location %s %s %s" %
                                                        (pre_cmd, self.curl_path, output_opts, curl_opts, url))
                 if rc > 0:
                     self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+
+            if not exists(self.params, 'dest'):
+                # need to find out the path of the downloaded file
+                files = os.listdir(dest)
+                num_files = len(files)
+
+                if num_files != 1:
+                    self.module.fail_json(msg="failed to locate download for %s: %s file(s) found in %s"
+                                              % (self.pkg.name(), num_files, dest))
+
+                dest = "%s/%s" % (dest, files[0])
+                # self.module.exit_json(changed=False, msg="dest %s" % dest)
 
             self._pkg_path = dest
 
