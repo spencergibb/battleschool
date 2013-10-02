@@ -52,7 +52,7 @@ def main(args):
         constants=AC,
         usage=usage,
         connect_opts=True,
-        runas_opts=True,
+        runas_opts=False,
         subset_opts=True,
         check_opts=True,
         diff_opts=True,
@@ -68,7 +68,11 @@ def main(args):
                       help="do list all tasks that would be executed")
     parser.add_option('--step', dest='step', action='store_true',
                       help="one-step-at-a-time: confirm each task before running")
+    parser.add_option("-s", "--sudo", default=AC.DEFAULT_SUDO, action="store_true",
+                      dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
+                      help="config directory for battleschool (default=%s)" % battleschool_dir)
+    parser.add_option('-u', '--update-vcs', dest='update_vcs', default=False, action='store_true',
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
 
     options, args = parser.parse_args(args)
@@ -82,13 +86,14 @@ def main(args):
 
     sshpass = None
     sudopass = None
+    options.remote_user = AC.DEFAULT_REMOTE_USER
     if not options.listhosts and not options.syntax and not options.listtasks:
         options.ask_pass = AC.DEFAULT_ASK_PASS
         options.ask_sudo_pass = options.ask_sudo_pass or AC.DEFAULT_ASK_SUDO_PASS
         ( sshpass, sudopass ) = utils.ask_passwords(ask_pass=options.ask_pass, ask_sudo_pass=options.ask_sudo_pass)
         # if options.sudo_user or options.ask_sudo_pass:
         #     options.sudo = True
-        options.sudo_user = options.sudo_user or AC.DEFAULT_SUDO_USER
+        options.sudo_user = AC.DEFAULT_SUDO_USER
     if options.extra_vars and options.extra_vars[0] in '[{':
         extra_vars = utils.json_loads(options.extra_vars)
     else:
@@ -123,6 +128,7 @@ def main(args):
         options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
 
     if 'sources' in config_data:
+        display(banner("Updating sources"))
         sources = config_data['sources']
 
         for handler in handlers:
@@ -137,10 +143,10 @@ def main(args):
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
-    stats = callbacks.AggregateStats()
 
     # run all playbooks specified on the command line
     for playbook in playbooks_to_run:
+        stats = callbacks.AggregateStats()
 
         # let inventory know which playbooks are using so it can know the basedirs
         inventory.set_playbook_basedir(os.path.dirname(playbook))

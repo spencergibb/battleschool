@@ -38,10 +38,10 @@ def print_stats(host, smry):
     else:
         status = stringc("OK", "bright green")
 
-    pattern = "\tPlaybook %s on %s, %s, %s, %s, %s"
+    pattern = "\tPlaybook %s, %s, %s, %s, %s"
 
     display(pattern % (status,
-        hostcolor(host, smry, False),
+        # hostcolor(host, smry, False),
         colorize('ok', ok, 'bright green'),
         colorize('changed', changed, 'yellow'),
         colorize('unreachable', unreachable, 'red'),
@@ -50,7 +50,7 @@ def print_stats(host, smry):
     )
 
     display(pattern % (status,
-        hostcolor(host, smry, False),
+        # hostcolor(host, smry, False),
         colorize('ok', ok, None),
         colorize('changed', changed, None),
         colorize('unreachable', unreachable, None),
@@ -83,8 +83,24 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
         else:
             msg = ''
 
-        if self.task:
-            display("\tTask OK: %s%s" % (self.task.name, msg))
+        try:
+            if self.task:
+                display("\tTask OK: %s%s" % (self.task.name, msg))
+        except AttributeError:
+            invocation = res['invocation']
+            msg = invocation['module_args']
+            module_name = invocation['module_name']
+
+            #TODO: move this?
+            if module_name == 'git':
+                args = dict()
+                tokens = invocation['module_args'].split()
+                for token in tokens:
+                    pair = token.split("=")[:2]
+                    args[pair[0]] = pair[1]
+                msg = args['repo']
+
+            display("\tTask OK: %s, changed=%s %s" % (module_name, res['changed'], msg))
         super(BattleschoolRunnerCallbacks, self).on_ok(host, res)
 
     def on_unreachable(self, host, results):
