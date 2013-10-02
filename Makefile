@@ -9,14 +9,7 @@
 ########################################################
 # variable section
 
-NAME = "battleschool"
-OS = $(shell uname -s)
-
 PYTHON=python
-SITELIB = $(shell $(PYTHON) -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
-
-# VERSION file provides one place to update the software version
-VERSION := $(shell cat VERSION)
 
 ########################################################
 
