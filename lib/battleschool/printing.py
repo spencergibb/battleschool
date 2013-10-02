@@ -60,8 +60,8 @@ def print_stats(host, smry):
 
 
 def banner(msg):
-
-    width = 78 - len(msg)
+    #TODO: configurable size orig 78
+    width = 110 - len(msg)
     if width < 3:
         width = 3
     filler = "#" * width
