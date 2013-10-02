@@ -5,7 +5,7 @@ Development environment provisioning using ansible, ala boxen -> puppet, kitchen
 
 ### install
 
-    sudo pip install https://github.com/32degrees/battleschool/archive/v0.0.1.tar.gz
+    sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.1.0/battleschool-0.1.0.tar.gz
 
 
 ### remote source playbooks
