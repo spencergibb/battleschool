@@ -137,10 +137,10 @@ def main(args):
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
-    stats = callbacks.AggregateStats()
 
     # run all playbooks specified on the command line
     for playbook in playbooks_to_run:
+        stats = callbacks.AggregateStats()
 
         # let inventory know which playbooks are using so it can know the basedirs
         inventory.set_playbook_basedir(os.path.dirname(playbook))
