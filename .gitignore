@@ -1,5 +1,6 @@
 *.py[cod]
 test/testconfig/cache
+MANIFEST
 
 # C extensions
 *.so

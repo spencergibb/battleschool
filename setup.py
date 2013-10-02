@@ -23,7 +23,7 @@ for i in files:
 
 setup(name='battleschool',
       version=__version__,
-      description='Radically simple IT automation',
+      description='simple dev box provisioning',
       author=__author__,
       author_email='spencer@32degre.es',
       url='http://32degre.es',

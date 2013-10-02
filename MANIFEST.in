@@ -1,0 +1,4 @@
+include README.md  COPYING
+include packaging/distutils/setup.py
+recursive-include share *
+include Makefile

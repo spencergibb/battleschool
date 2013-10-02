@@ -3,6 +3,11 @@
 
 Development environment provisioning using ansible, ala boxen -> puppet, kitchenplan -> chef
 
+### install
+
+    sudo pip install https://github.com/32degrees/battleschool/archive/v0.0.1.tar.gz
+
+
 ### remote source playbooks
 
 Directory Layout
@@ -14,10 +19,12 @@ The top level of the directory would contain files and directories like so:
     ux.yml                    # playbook for ux
 
     roles/                    # standard ansible role hierarchy
-    modules/                  # remote module definitions
+    library/                  # remote module definitions
 
-TODO: Consolidated simple cli output
+TODO: Polish cli output
 
 TODO: Docs
+
+TODO: Submit pip
 
 TODO: Submit mac port
