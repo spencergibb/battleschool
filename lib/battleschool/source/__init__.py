@@ -71,8 +71,12 @@ class Source(object):
                     results = runner.run()
                     for result in results['contacted'].values():
                         if 'failed' in result or result.get('rc', 0) != 0:
+                            callbacks.display("ERROR: failed source type (%s) '%s': %s" % (self.type(), module_args, result['msg']),
+                                              stderr=True, color='red')
                             sys.exit(2)
                     if results['dark']:
+                        callbacks.display("ERROR: failed source type (%s) '%s': DARK" % (self.type(), module_args),
+                                          stderr=True, color='red')
                         sys.exit(2)
                 except errors.AnsibleError, e:
                     # Generic handler for ansible specific errors
