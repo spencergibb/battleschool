@@ -77,6 +77,9 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
     def on_ok(self, host, res):
         if 'msg' in res:
             msg = ": %s" % res['msg']
+
+            if 'item' in res:
+                msg = "%s => item=%s" % (msg, res['item'])
         else:
             msg = ''
 
