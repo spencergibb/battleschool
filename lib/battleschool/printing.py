@@ -72,6 +72,8 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
     """ callbacks for use by battles """
 
     def on_failed(self, host, res, ignore_errors=False):
+        if not ignore_errors:
+            display("\tTask FAILED: %s%s" % (self.task.name, res['msg']), color="red")
         super(BattleschoolRunnerCallbacks, self).on_failed(host, res, ignore_errors=ignore_errors)
 
     def on_ok(self, host, res):
@@ -119,9 +121,11 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
         super(BattleschoolRunnerCallbacks, self).on_skipped(host, item)
 
     def on_error(self, host, err):
+        display("\tTask ERROR: %s%s" % (self.task.name, err), color="red")
         super(BattleschoolRunnerCallbacks, self).on_error(host, err)
 
     def on_no_hosts(self):
+        display("\tTask NO HOSTS: %s" % self.task.name, color="red")
         super(BattleschoolRunnerCallbacks, self).on_no_hosts()
 
     def on_async_poll(self, host, res, jid, clock):

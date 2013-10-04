@@ -158,19 +158,28 @@ class DmgArchive(Archive):
         super(DmgArchive, self).__init__(module, pkg)
         self.hdiutil_path = module.get_bin_path('hdiutil', True, ['/usr/bin'])
         self.dmg_volume = None
+        self.dmg_license = self.params['dmg_license']
 
     def open(self):
+        hdi_pre = ""
+        hdi_post = "| grep Volumes"
+
+        if self.dmg_license:
+            hdi_pre = "echo y |"
+            hdi_post = ""
+
         #if dmg mount and record volume path
         #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
-        rc, out, err = self.module.run_command("%s attach %s | grep Volumes" % (self.hdiutil_path, self._pkg_path))
+        command = "%s %s attach %s %s " % (hdi_pre, self.hdiutil_path, self._pkg_path, hdi_post)
+        rc, out, err = self.module.run_command(command)
         if rc > 0:
-            self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+            self.module.fail_json(msg="failed to install %s: rc: %s, %s, err: %s" % (self.pkg.name(), rc, out, err))
 
         idx = out.index("/Volumes/")
         self.dmg_volume = out[idx:].strip()
         archive_path = self.params['archive_path']
-        self._pkg_path = "\"%s\"/\"%s\"" % (self.dmg_volume, archive_path)
-        # self.module.exit_json(changed=False, msg="pkg_path %s, archive_path %s" % (self.pkg_path, archive_path))
+        self._pkg_path = "%s/%s" % (self.dmg_volume, archive_path)
+        # self.module.exit_json(changed=False, msg="pkg_path %s, archive_path %s" % (self._pkg_path, archive_path))
 
     def close(self):
         rc, out, err = self.module.run_command("%s unmount \"%s\"" % (self.hdiutil_path, self.dmg_volume))
@@ -233,9 +242,11 @@ class PkgPackage(Package):
         #install package file
         #installer -pkg "${PGK_DIR}"/"${PKG_FILE}" -target /
         #TODO: support target param
-        rc, out, err = self.module.run_command("%s -pkg %s -target /" % (self.installer_path, pkg_path))
+        rc, out, err = self.module.run_command("%s -pkg \"%s\" -target /" % (self.installer_path, pkg_path))
         if rc > 0:
-            self.module.fail_json(msg="failed to install %s: %s %s" % (pkg_path, out, err))
+            return out, err
+
+        return False
 
     def is_installed(self):
         pkg_version = None
@@ -309,7 +320,11 @@ class Installer(object):
 
             archive.open()
 
-            pkg.install(archive.pkg_path())
+            failed = pkg.install(archive.pkg_path())
+
+            if failed:
+                archive.close()
+                self.module.fail_json(msg="failed to install %s: %s %s" % (archive.pkg_path(), failed[0], failed[1]))
 
             archive.close()
             #self.module.exit_json(changed=False, msg="pkg %s, archive %s" % (pkg, archive))
@@ -350,6 +365,7 @@ def main():
             pkg_name=dict(required=False),
             pkg_version=dict(required=False),
             app_creates=dict(required=False),
+            dmg_license=dict(default='no', type='bool'),
         )
     )
 
