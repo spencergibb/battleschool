@@ -1,5 +1,4 @@
-MODULE_PARAMS="state=present"
-MODULE_PARAMS="$MODULE_PARAMS pkg_name=org.macports.MacPorts"
+MODULE_PARAMS="pkg_name=org.macports.MacPorts"
 MODULE_PARAMS="$MODULE_PARAMS pkg_version=1.0"
 MODULE_PARAMS="$MODULE_PARAMS src=/tmp/macports.zip"
 MODULE_PARAMS="$MODULE_PARAMS archive_type=zip"
