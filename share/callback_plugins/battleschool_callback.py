@@ -26,14 +26,16 @@ class CallbackModule(object):
         pass
 
     def runner_on_failed(self, host, res, ignore_errors=False):
-        self.display('runner_on_failed', host, res, ignore_errors)
+        # self.display('runner_on_failed', host, res, ignore_errors)
+        pass
 
     def runner_on_ok(self, host, res):
         # self.display('runner_on_ok', host, res)
         pass
 
     def runner_on_error(self, host, msg):
-        self.display('runner_on_error', host, msg)
+        # self.display('runner_on_error', host, msg)
+        pass
 
     def runner_on_skipped(self, host, item=None):
         # self.display('runner_on_skipped', host, item)
@@ -44,7 +46,8 @@ class CallbackModule(object):
         pass
 
     def runner_on_no_hosts(self):
-        self.display('runner_on_no_hosts')
+        # self.display('runner_on_no_hosts')
+        pass
 
     def runner_on_async_poll(self, host, res, jid, clock):
         self.display('runner_on_async_poll', host, res, jid, clock)
