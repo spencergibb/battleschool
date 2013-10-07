@@ -1,30 +1,135 @@
 ## battleschool
-============
 
-Development environment provisioning using ansible, ala boxen -> puppet, kitchenplan -> chef
+Development environment provisioning using [ansible](http://www.ansibleworks.com/docs/),
+ala [boxen](http://boxen.github.com/) which uses [puppet](http://puppetlabs.com/puppet/what-is-puppet) and
+[kitchenplan](https://github.com/kitchenplan/kitchenplan) which uses [chef](http://docs.opscode.com/)
+Build on and for macs, but should be usable on Linux
 
 ### install
 
     sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.1.0/battleschool-0.1.0.tar.gz
 
+### configuration
 
-### remote source playbooks
+*NOTE: in the future, a default empty configuration will be created if you do not create one*
+
+mkdir ~/.battleschool
+
+put the following in ~/.battleschool/config.yml and uncomment the items you want intstalled (remove the #)
+
+    ---
+    sources:
+      local:
+        #- playbook.yml
+
+      git:
+        - name: 'osx'
+          repo: 'https://github.com/spencergibb/ansible-osx'
+          playbooks:
+             #- adium.yml
+             #- alfred.yml
+             #- better-touch-tool.yml
+             #- chrome-beta.yml
+             #- dropbox.yml
+             #- github.yml
+             #- gitx.yml
+             #- intellij-idea-ultimate.yml
+             #- iterm2.yml
+             #- java7.yml
+             #- libreoffice.yml
+             #- sequel-pro.yml
+             #- skype.yml
+             #- truecrypt.yml
+             #- usb-overdrive.yml
+             #- vagrant.yml
+             #- virtualbox.yml
+             #- xtra-finder.yml
+
+[Here is my config.yml](https://db.tt/aG2uyydU)
+
+### explanation of ~/.battleschool/config.yml
+
+#### local sources
+
+    sources:
+      local:
+        - playbook.yml
+
+Any [ansible playbooks](http://www.ansibleworks.com/docs/#playbooks) located in ~/battleschool/playbooks
+can be listed under local.  Each playbook will be executed in order.  This can useful for custom
+configuration per workstation.  (You could install apps with homebrew or macports if those are installed, for example)
+
+#### git sources
+
+    git:
+      - name: 'osx'
+        repo: 'https://github.com/spencergibb/ansible-osx'
+        playbooks:
+           - adium.yml
+
+Any git repo that hosts ansible playbooks (specific to battleschool or not) will work here.  Each item under
+playsbooks is the relative location to a playbook in the specified git repository.  In the example above, adium.yml
+is in the root of the ansible-osx repository.
+
+#### git repo sources
 
 Directory Layout
 
 The top level of the directory would contain files and directories like so:
 
-    local.yml                 # master playbook, after ansible-pull
-    qa.yml                    # playbook for qa
+    local.yml                 # master playbook, after ansible-pull, automatically run, no need to list under playbooks
+                              # NOT REQUIRED
+
+    dev.yml                   # playbook for dev
     ux.yml                    # playbook for ux
+    chrome.yml                # playbook for chrome
 
     roles/                    # standard ansible role hierarchy
     library/                  # remote module definitions
 
-TODO: polish cli output
+See the [roles docs](http://www.ansibleworks.com/docs/playbooks_roles.html) for information about ansible roles and
+library is the location for placing [custom ansible modules](http://www.ansibleworks.com/docs/developing_modules.html)
 
-TODO: Docs
 
-TODO: Submit pip
+#### the mac_pkg module
 
-TODO: Submit mac port
+if you look most of the playbooks in [this git repo](https://github.com/spencergibb/ansible-osx) you will see the use of
+the mac_pkg module.  Mac apps are usually a pkg (or mpgk) installer, or the bare .app directory.  They can be archived
+in a number of formats: DMG or zip commonly.  Pkg files may not be archived at all.  Less common formats (tar or 7zip)
+are not supported yet.
+
+Lets look at adium.yml
+
+    ---
+    - hosts: workstation
+
+      tasks:
+        - name: install Adium
+          mac_pkg: pkg_type=app
+                   url=http://sourceforge.net/projects/adium/files/Adium_1.5.7.dmg/download
+                   archive_type=dmg archive_path=Adium.app
+          sudo: yes
+
+`- hosts: workstation` this is required in each playbook as it targets the local workstation.  Though this is generally
+arbitrary for most ansible users, it must be `workstation` in battleschool.
+
+`pkg_type=app` type must be pkg or app.  Defaults to pkg
+
+`url=....` the url of the app to download, alternatively `src=/local/path/to/app.dmg` may be used instead.
+
+`archive_type=dmg` one of dmg, zip or none.  Defaults to none.
+
+`archive_path=Adium.app` The path to the app or pkg in the archive.
+
+`sudo: yes` required for mac_pkg tasks (this will prompt you to enter you sudo password only once)
+
+*NOTE: battleschool, currently does not install apps from the Apple App Store.*
+
+
+TODO: cleanup cli output
+
+TODO: more docs
+
+TODO: submit pip
+
+TODO: submit mac port?
