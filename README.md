@@ -197,3 +197,5 @@ TODO: cleanup cli output
 TODO: more docs
 
 TODO: submit mac port?
+
+TODO: on a mac make cache dir go to ~/Library/Caches/Battleschool
