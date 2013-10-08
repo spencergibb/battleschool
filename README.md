@@ -196,6 +196,4 @@ TODO: cleanup cli output
 
 TODO: more docs
 
-TODO: submit pip: http://docs.python.org/3/distutils/packageindex.html
-
 TODO: submit mac port?
