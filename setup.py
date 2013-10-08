@@ -11,6 +11,13 @@ from distutils.core import setup
 # find library modules
 from battleschool.constants import DIST_MODULE_PATH
 
+long_description = """
+Development environment provisioning using ansible (http://www.ansibleworks.com/docs/),
+ala boxen (http://boxen.github.com/) which uses puppet (http://puppetlabs.com/puppet/what-is-puppet) and
+kitchenplan (https://github.com/kitchenplan/kitchenplan) which uses chef (http://docs.opscode.com/)
+Built on and for macs, but should be usable on Linux
+"""
+
 share_path = "./share/"
 files = os.listdir(share_path)
 data_files = []
@@ -24,11 +31,23 @@ for i in files:
 setup(name='battleschool',
       version=__version__,
       description='simple dev box provisioning',
+      long_description=long_description,
       author=__author__,
       author_email='spencer@32degre.es',
       url='http://32degre.es',
-      license='GPLv3',
+      download_url='https://github.com/32degrees/battleschool/releases',
+      license='Apache License, Version 2.0',
       install_requires=['ansible'],
+      classifiers=[
+          "Development Status :: 3 - Alpha",
+          "Environment :: Console",
+          "Environment :: MacOS X",
+          "Intended Audience :: Developers",
+          "License :: OSI Approved :: Apache Software License",
+          "Programming Language :: Python :: 2.7",
+          "Topic :: System :: Installation/Setup"
+      ],
+      keywords="provisioning setup install",
       package_dir={'battleschool': 'lib/battleschool'},
       packages=[
           'battleschool',
