@@ -3,11 +3,15 @@
 Development environment provisioning using [ansible](http://www.ansibleworks.com/docs/),
 ala [boxen](http://boxen.github.com/) which uses [puppet](http://puppetlabs.com/puppet/what-is-puppet) and
 [kitchenplan](https://github.com/kitchenplan/kitchenplan) which uses [chef](http://docs.opscode.com/)
-Build on and for macs, but should be usable on Linux
+Built on and for macs, but should be usable on Linux
 
 ### install
 
     sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.1.0/battleschool-0.1.0.tar.gz
+
+### running battleschool
+
+`battle`
 
 ### configuration
 
@@ -126,10 +130,72 @@ arbitrary for most ansible users, it must be `workstation` in battleschool.
 *NOTE: battleschool, currently does not install apps from the Apple App Store.*
 
 
+### common battle options
+
+I alias battle to `battle -K`
+
+    -K, --ask-sudo-pass   ask for sudo password
+
+Force update of the playbooks from a VCS such as git
+
+    -u, --update-vcs      update playbooks from a version control system (vcs)
+
+
+### battle USAGE
+    $ battle -h
+    Usage: battle
+
+    Options:
+      -k, --ask-pass        ask for SSH password
+      -K, --ask-sudo-pass   ask for sudo password
+      -C, --check           don't make any changes; instead, try to predict some
+                            of the changes that may occur
+      --config-dir=CONFIG_DIR
+                            config directory for battleschool
+                            (default=~/.battleschool)
+      -c CONNECTION, --connection=CONNECTION
+                            connection type to use (default=smart)
+      -D, --diff            when changing (small) files and templates, show the
+                            differences in those files; works great with --check
+      -e EXTRA_VARS, --extra-vars=EXTRA_VARS
+                            set additional key=value variables from the CLI
+      -f FORKS, --forks=FORKS
+                            specify number of parallel processes to use
+                            (default=5)
+      -h, --help            show this help message and exit
+      -i INVENTORY, --inventory-file=INVENTORY
+                            specify inventory host file
+                            (default=/usr/share/battleschool/defaults/hosts)
+      -l SUBSET, --limit=SUBSET
+                            further limit selected hosts to an additional pattern
+      --list-hosts          outputs a list of matching hosts; does not execute
+                            anything else
+      --list-tasks          do list all tasks that would be executed
+      -M MODULE_PATH, --module-path=MODULE_PATH
+                            specify path(s) to module library
+                            (default=/usr/share/ansible/)
+      -o, --one-line        condense output
+      --private-key=PRIVATE_KEY_FILE
+                            use this file to authenticate the connection
+      --step                one-step-at-a-time: confirm each task before running
+      -s, --sudo            run operations with sudo (nopasswd)
+      --syntax-check        do a playbook syntax check on the playbook, do not
+                            execute the playbook
+      --tags=TAGS           only run plays and tasks tagged with these values
+      -T TIMEOUT, --timeout=TIMEOUT
+                            override the SSH timeout in seconds (default=10)
+      -t TREE, --tree=TREE  log output to this directory
+      -u, --update-vcs      update playbooks from a version control system (vcs)
+      -v, --verbose         verbose mode (-vvv for more, -vvvv to enable
+                            connection debugging)
+      --version             show program's version number and exit
+
+=================
+
 TODO: cleanup cli output
 
 TODO: more docs
 
-TODO: submit pip
+TODO: submit pip: http://docs.python.org/3/distutils/packageindex.html
 
 TODO: submit mac port?

@@ -73,7 +73,7 @@ def main(args):
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
     parser.add_option('-u', '--update-vcs', dest='update_vcs', default=False, action='store_true',
-                      help="config directory for battleschool (default=%s)" % battleschool_dir)
+                      help="update playbooks from a version control system (vcs)")
 
     options, args = parser.parse_args(args)
 
