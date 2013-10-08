@@ -73,7 +73,7 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
 
     def on_failed(self, host, res, ignore_errors=False):
         if not ignore_errors:
-            display("\tTask FAILED: %s%s" % (self.task.name, res['msg']), color="red")
+            display("\tTask FAILED: %s %s" % (self.task.name, res['msg']), color="red")
         super(BattleschoolRunnerCallbacks, self).on_failed(host, res, ignore_errors=ignore_errors)
 
     def on_ok(self, host, res):

@@ -300,10 +300,15 @@ class ScriptPackage(Package):
         super(ScriptPackage, self).__init__(module)
         self._creates = self.params['creates']
         self._exe_path = module.get_bin_path(self.params['script_executable'], True, ['/usr/bin', '/usr/local/bin'])
-        # self.module.exit_json(changed=False, msg="_exe_path %s, _creates %s" % (self._exe_path, self._creates))
+
+        if exists(self.params, 'script_prefix'):
+            self._prefix = self.params['script_prefix']
+        else:
+            self._prefix = ''
+        # self.module.exit_json(changed=False, msg="_prefix %s, _exe_path %s, _creates %s" % (self._prefix, self._exe_path, self._creates))
 
     def install(self, pkg_path):
-        rc, out, err = self.module.run_command("echo | %s \"%s\"" % (self._exe_path, pkg_path))
+        rc, out, err = self.module.run_command("%s%s \"%s\"" % (self._prefix, self._exe_path, pkg_path))
         if rc > 0:
             return out, err
 
@@ -392,6 +397,7 @@ def main():
             creates=dict(aliases=["app_creates", "script_creates"], required=False),
             dmg_license=dict(default='no', type='bool'),
             script_executable=dict(aliases=["script_exe"], required=False),
+            script_prefix=dict(aliases=["script_prefix"], required=False),
         )
     )
 
