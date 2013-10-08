@@ -22,4 +22,5 @@ DEFAULT_MODULE_PATH = get_config('BATTLESCHOOL_LIBRARY', os.path.join(DIST_MODUL
 DEFAULT_HOST_LIST = os.path.expanduser(get_config('BATTLESCHOOL_HOSTS', os.path.join(DIST_MODULE_PATH, 'defaults', 'hosts')))
 DEFAULT_PLAYBOOK = os.path.expanduser(get_config('BATTLESCHOOL_PLAYBOOK', os.path.join(DIST_MODULE_PATH, 'defaults', 'battleschool.yml')))
 DEFAULT_CALLBACK_PLUGIN_PATH = os.path.expanduser(get_config('BATTLESCHOOL_CALLBACK_PLUGINS', os.path.join(DIST_MODULE_PATH, 'callback_plugins')))
+DEFAULT_SUDO_FLAGS = get_config('BATTLESCHOOL_SUDO_FLAGS', '-E')
 
