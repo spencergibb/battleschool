@@ -228,6 +228,7 @@ class PkgPackage(Package):
         super(PkgPackage, self).__init__(module)
         self.installer_path = module.get_bin_path('installer', True, ['/usr/sbin'])
         self.pkgutil_path = module.get_bin_path('pkgutil', True, ['/usr/sbin'])
+        #TODO: add creates which would override pkg_version
 
         #find installed version
         self._pkg_name = self.params['pkg_name']
@@ -272,8 +273,8 @@ class AppPackage(Package):
 
     def __init__(self, module):
         super(AppPackage, self).__init__(module)
-        if exists(self.params, 'app_creates'):
-            self._app_creates = self.params['app_creates']
+        if exists(self.params, 'creates'):
+            self._app_creates = self.params['creates']
         elif exists(self.params, 'archive_path'):
             # TODO: parameterize app destination
             self._app_creates = '/Applications/%s' % self.params['archive_path']
@@ -288,6 +289,31 @@ class AppPackage(Package):
 
     def name(self):
         return self._app_creates
+
+    def version(self):
+        return "N/A"
+
+
+class ScriptPackage(Package):
+
+    def __init__(self, module):
+        super(ScriptPackage, self).__init__(module)
+        self._creates = self.params['creates']
+        self._exe_path = module.get_bin_path(self.params['script_executable'], True, ['/usr/bin', '/usr/local/bin'])
+        # self.module.exit_json(changed=False, msg="_exe_path %s, _creates %s" % (self._exe_path, self._creates))
+
+    def install(self, pkg_path):
+        rc, out, err = self.module.run_command("echo | %s \"%s\"" % (self._exe_path, pkg_path))
+        if rc > 0:
+            return out, err
+
+        return False
+
+    def is_installed(self):
+        return path.exists(self._creates)
+
+    def name(self):
+        return self._creates
 
     def version(self):
         return "N/A"
@@ -313,7 +339,6 @@ class Installer(object):
         if pkg.is_installed():
             self.module.exit_json(changed=False, version=pkg.version(), msg="package %s already present" % pkg.name())
         else:
-
             archive = self._instantiate('archive_type', 'Archive', pkg)
 
             archive.acquire()
@@ -361,11 +386,12 @@ def main():
             force=dict(default='no', type='bool'),
             curl_opts=dict(aliases=[], required=False),
             archive_path=dict(required=False),
-            pkg_type=dict(default="pkg", choices=["pkg", "app"]),
+            pkg_type=dict(default="pkg", choices=["pkg", "app", "script"]),
             pkg_name=dict(required=False),
             pkg_version=dict(required=False),
-            app_creates=dict(required=False),
+            creates=dict(aliases=["app_creates", "script_creates"], required=False),
             dmg_license=dict(default='no', type='bool'),
+            script_executable=dict(aliases=["script_exe"], required=False),
         )
     )
 
