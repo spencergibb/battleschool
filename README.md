@@ -7,7 +7,14 @@ Built on and for macs, but should be usable on Linux
 
 ### install
 
-    sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.1.0/battleschool-0.1.0.tar.gz
+    #if needed
+    sudo easy_install pip
+
+    sudo pip install battleschool
+
+### install preview releases
+
+    sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.x.0/battleschool-0.x.0.tar.gz
 
 ### running battleschool
 
