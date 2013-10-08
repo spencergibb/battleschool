@@ -45,6 +45,7 @@ def main(args):
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
     AC.DEFAULT_HOST_LIST = C.DEFAULT_HOST_LIST
+    AC.DEFAULT_SUDO_FLAGS = C.DEFAULT_SUDO_FLAGS
 
     # create parser for CLI options
     usage = "%prog"

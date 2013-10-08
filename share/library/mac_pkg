@@ -40,6 +40,7 @@ class Archive(object):
         self.module = module
         self.params = module.params
         self.curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
+        self.chown_path = module.get_bin_path('chown', True)
         self.pkg = pkg
         return
 
@@ -54,12 +55,21 @@ class Archive(object):
         """ close the archive """
         pass
 
+    def source(self):
+        if exists(self.params, 'src'):
+            return self.params['src']
+
+        return self.params['url']
+
+
     def acquire(self):
+        acquired = False
         if exists(self.params, 'src'):
             src = self.params['src']
 
             self._pkg_path = src
             # module.exit_json(changed=False, msg="src: '%s'" % src)
+            acquired = True
         else:
             #get pkg from url
             #wget --no-cookies --no-check-certificate --directory-prefix=${WORK_DIR} -c --header "Cookie: $COOKIE" ${URL}
@@ -77,6 +87,13 @@ class Archive(object):
             download_dir = path.expanduser("~/.battleschool/cache/downloads")
             if not path.exists(download_dir):
                 os.makedirs(download_dir)
+
+            #TODO: make chown optional?
+            if exists(os.environ, 'SUDO_USER'):
+                chown_user = os.environ['SUDO_USER']
+            else:
+                chown_user = None
+            # self.module.exit_json(changed=False, msg="chown_user %s" % chown_user)
 
             #TODO: verify write perms of dest parent
             if exists(self.params, 'dest'):
@@ -116,6 +133,7 @@ class Archive(object):
                                                        (pre_cmd, self.curl_path, output_opts, curl_opts, url))
                 if rc > 0:
                     self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+                acquired = True
 
             if not exists(self.params, 'dest'):
                 # need to find out the path of the downloaded file
@@ -129,7 +147,15 @@ class Archive(object):
                 dest = "%s/%s" % (dest, files[0])
                 # self.module.exit_json(changed=False, msg="dest %s" % dest)
 
+            #TODO: only chown downloaded item, only chown if just downloaded
+            if chown_user is not None:
+                rc, out, err = self.module.run_command("%s -R %s %s" % (self.chown_path, chown_user, download_dir))
+                if rc > 0:
+                    self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+
             self._pkg_path = dest
+
+        return acquired
 
 
 class ZipArchive(Archive):
@@ -338,15 +364,23 @@ class Installer(object):
         self.module = module
         self.params = module.params
 
-    def install(self):
+    def install(self, acquire_only):
         pkg = self._instantiate('pkg_type', 'Package')
 
-        if pkg.is_installed():
+        if pkg.is_installed() and not acquire_only:
             self.module.exit_json(changed=False, version=pkg.version(), msg="package %s already present" % pkg.name())
         else:
             archive = self._instantiate('archive_type', 'Archive', pkg)
 
-            archive.acquire()
+            acquired = archive.acquire()
+
+            if acquire_only:
+                if acquired:
+                    state = "Acquired"
+                else:
+                    state = "Skipped acquisition of"
+                self.module.exit_json(changed=acquired, msg="%s pkg %s" % (state, archive.source()))
+                return
 
             archive.open()
 
@@ -407,13 +441,20 @@ def main():
 
     installer.validate()
 
+    if 'MAC_PKG_ACQUIRE_ONLY' in os.environ:
+        acquire_only = module.boolean(os.environ['MAC_PKG_ACQUIRE_ONLY'])
+    else:
+        acquire_only = False
+
+    # module.exit_json(changed=False, msg="acquire_only %s, env %s" % (acquire_only, os.environ))
+
     if p["state"] in ["present", "installed"]:
-        installer.install()
+        installer.install(acquire_only)
 
     #TODO: implement remove
     elif p["state"] in ["absent", "removed"]:
-    #remove_package(module, pkgutil_path, pkg)
-        module.fail_json(changed=False, msg="remove package %s, using %s NOT IMPLEMENTED" % (pkg, pkgutil_path))
+        #remove_package(module, pkgutil_path, pkg)
+        module.fail_json(changed=False, msg="remove package NOT IMPLEMENTED")
 
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
