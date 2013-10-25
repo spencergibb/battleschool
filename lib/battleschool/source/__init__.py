@@ -7,8 +7,6 @@ import abc
 import os
 import sys
 
-import battleschool.printing
-
 from ansible import errors
 from ansible.callbacks import display
 from ansible.runner import Runner
@@ -96,7 +94,12 @@ class Source(object):
                             source_playbooks.append(playbook_name)
 
                 for playbook_name in source_playbooks:
-                    playbook = "%s/%s" % (self.dest_dir(source), playbook_name)
+                    suffix = ""
+
+                    if not playbook_name.endswith(".yml") and not playbook_name.endswith(".yaml"):
+                        suffix = ".yml"
+
+                    playbook = "%s/%s%s" % (self.dest_dir(source), playbook_name, suffix)
                     if os.path.exists(playbook) and os.path.isfile(playbook):
                         playbooks.append(playbook)
 
