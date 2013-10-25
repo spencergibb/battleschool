@@ -89,9 +89,17 @@ class Source(object):
 
                 #add other playbooks relative to dest_dir from config.yml
                 if "playbooks" in source:
-                    for playbook_name in source['playbooks']:
-                        if playbook_name not in source_playbooks:
-                            source_playbooks.append(playbook_name)
+                    for playbook in source['playbooks']:
+                        # support for single level of directories in a playbook repo
+                        if type(playbook) is dict:
+                            for dir in playbook:
+                                names = playbook[dir]
+                                for name in names:
+                                    playbook_name = "%s/%s" % (dir, name)
+                                    if playbook_name not in source_playbooks:
+                                        source_playbooks.append(playbook_name)
+                        elif playbook not in source_playbooks:
+                            source_playbooks.append(playbook)
 
                 for playbook_name in source_playbooks:
                     suffix = ""
