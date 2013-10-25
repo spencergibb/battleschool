@@ -38,6 +38,10 @@ class Source(object):
     def module_name(self):
         return self.type()
 
+    def add_playbook(self, playbooks, playbook):
+        if os.path.exists(playbook) and os.path.isfile(playbook):
+            playbooks.append(playbook)
+
     def run(self, inventory, sshpass, sudopass):
         playbooks = []
         if self.type() in self.sources and self.sources[self.type()] is not None:
@@ -108,7 +112,6 @@ class Source(object):
                         suffix = ".yml"
 
                     playbook = "%s/%s%s" % (self.dest_dir(source), playbook_name, suffix)
-                    if os.path.exists(playbook) and os.path.isfile(playbook):
-                        playbooks.append(playbook)
+                    self.add_playbook(playbooks, playbook)
 
         return playbooks
