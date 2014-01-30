@@ -41,9 +41,13 @@ def main(args):
 
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
+    # TODO: make battle OO or more modular
+    #-----------------------------------------------------------
+    # make ansible defaults, battleschool defaults
     AC.DEFAULT_HOST_LIST = C.DEFAULT_HOST_LIST
     AC.DEFAULT_SUDO_FLAGS = C.DEFAULT_SUDO_FLAGS
 
+    #-----------------------------------------------------------
     # create parser for CLI options
     usage = "%prog"
     parser = utils.base_parser(
@@ -77,11 +81,15 @@ def main(args):
 
     playbooks_to_run = [C.DEFAULT_PLAYBOOK]
 
+    #-----------------------------------------------------------
+    # setup inventory
     inventory = ansible.inventory.Inventory(options.inventory)
     inventory.subset(options.subset)
     if len(inventory.list_hosts()) == 0:
         raise errors.AnsibleError("provided hosts list is empty")
 
+    #-----------------------------------------------------------
+    # setup default options
     sshpass = None
     sudopass = None
     options.remote_user = AC.DEFAULT_REMOTE_USER
@@ -98,17 +106,31 @@ def main(args):
         extra_vars = utils.parse_kv(options.extra_vars)
     only_tags = options.tags.split(",")
 
+    #-----------------------------------------------------------
+    # setup config_dir and battleschool_dir
     if options.config_dir:
         battleschool_dir = options.config_dir
     else:
         options.config_dir = battleschool_dir
 
+    #-----------------------------------------------------------
+    # parse config data
     config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
-    options.cache_dir = "%s/cache" % battleschool_dir
 
+    #-----------------------------------------------------------
+    # set config_dir
+    if "config_dir" in config_data:
+        options.cache_dir = os.path.expanduser(config_data["config_dir"])
+    else:
+        options.cache_dir = "%s/cache" % battleschool_dir
+
+    #-----------------------------------------------------------
+    # set mac_version TODO: only set mac_version if on a mac
     output = subprocess.check_output(["/usr/bin/sw_vers", "-productVersion"])
     mac_version = output.split()[-1].split(".")
 
+    #-----------------------------------------------------------
+    # setup extra_vars for later use
     if extra_vars is None:
         extra_vars = dict()
 
@@ -117,6 +139,8 @@ def main(args):
     extra_vars['mac_version'] = mac_version
     extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 
+    #-----------------------------------------------------------
+    # setup and run source handlers
     handlers = getSourceHandlers()
 
     if options.module_path is None:
@@ -135,14 +159,16 @@ def main(args):
             for playbook in playbooks:
                 playbooks_to_run.append(playbook)
 
+    #-----------------------------------------------------------
+    # validate playbooks
     for playbook in playbooks_to_run:
         if not os.path.exists(playbook):
             raise errors.AnsibleError("the playbook: %s could not be found" % playbook)
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
-
-    # run all playbooks specified on the command line
+    #-----------------------------------------------------------
+    # run all playbooks specified from config
     for playbook in playbooks_to_run:
         stats = callbacks.AggregateStats()
 

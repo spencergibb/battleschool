@@ -1,5 +1,6 @@
 *.py[cod]
 test/testconfig/cache
+test/test_cache
 MANIFEST
 
 # C extensions
