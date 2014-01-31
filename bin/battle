@@ -159,8 +159,8 @@ def main(args):
 
     #-----------------------------------------------------------
     # set config_dir
-    if "config_dir" in config_data:
-        options.cache_dir = os.path.expanduser(config_data["config_dir"])
+    if "cache_dir" in config_data:
+        options.cache_dir = os.path.expanduser(config_data["cache_dir"])
     else:
         options.cache_dir = "%s/cache" % battleschool_dir
 

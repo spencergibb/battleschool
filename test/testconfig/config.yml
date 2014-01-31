@@ -1,6 +1,5 @@
 ---
-somevar: somevalue
-config_dir: test/test_cache
+cache_dir: test/test_cache
 
 sources:
   local:
