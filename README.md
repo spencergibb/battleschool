@@ -68,6 +68,7 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
              #- xtra-finder.yml
 
 [Here is my config.yml](https://db.tt/aG2uyydU)
+
 [Here is my playbook.yml](https://db.tt/VcyI9dvr)
 
 ### explanation of ~/.battleschool/config.yml
