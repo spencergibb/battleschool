@@ -1,14 +1,21 @@
 ---
-somevar: somevalue
+cache_dir: test/test_cache
 
 sources:
   local:
     - playbook.yml
-    - another_playbook.yml
+    #- another_playbook.yml
+
+  url:
+    #- https://db.tt/JVnWh3vI
+    - name: another_playbook.yml
+      url: https://db.tt/JVnWh3vI
 
   git:
     #- { name: 'osx', repo: 'https://github.com/spencergibb/ansible-osx' }
     - name: 'osx'
       repo: 'https://github.com/spencergibb/ansible-osx'
       playbooks:
-         - test.yml
+         - test
+         - apps:
+           - test2

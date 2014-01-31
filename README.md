@@ -16,6 +16,13 @@ Built on and for macs, but should be usable on Linux
 
     sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.x.0/battleschool-0.x.0.tar.gz
 
+### running battleschool for the first time
+
+    battle --config-file http://somesite/path/to/your/config.yml
+
+As long as you config.yml doesn't have a source.local section (see configuration below), you don't need to download or
+create a configuration for the first time.
+
 ### running battleschool
 
 `battle`
@@ -32,6 +39,10 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
     sources:
       local:
         #- playbook.yml
+
+      url:
+        #- name: playbook.yml
+        #  url: https://db.tt/VcyI9dvr
 
       git:
         - name: 'osx'
@@ -57,6 +68,7 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
              #- xtra-finder.yml
 
 [Here is my config.yml](https://db.tt/aG2uyydU)
+[Here is my playbook.yml](https://db.tt/VcyI9dvr)
 
 ### explanation of ~/.battleschool/config.yml
 
@@ -69,6 +81,15 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
 Any [ansible playbooks](http://www.ansibleworks.com/docs/#playbooks) located in ~/battleschool/playbooks
 can be listed under local.  Each playbook will be executed in order.  This can useful for custom
 configuration per workstation.  (You could install apps with homebrew or macports if those are installed, for example)
+
+#### url sources
+
+      url:
+        - name: playbook.yml
+          url: https://db.tt/VcyI9dvr
+
+Playbooks located at a url.  Each playbook will be executed in order.  Helpful for bootstrapping (ie, the first time
+you run battleschool.
 
 #### git sources
 
@@ -159,7 +180,10 @@ Force update of the playbooks from a VCS such as git
                             of the changes that may occur
       --config-dir=CONFIG_DIR
                             config directory for battleschool
-                            (default=~/.battleschool)
+                            (default=/Users/spencergibb/.battleschool)
+      --config-file=CONFIG_FILE
+                            config file for battleschool
+                            (default=/Users/spencergibb/.battleschool/config.yml)
       -c CONNECTION, --connection=CONNECTION
                             connection type to use (default=smart)
       -D, --diff            when changing (small) files and templates, show the
@@ -192,7 +216,7 @@ Force update of the playbooks from a VCS such as git
       -T TIMEOUT, --timeout=TIMEOUT
                             override the SSH timeout in seconds (default=10)
       -t TREE, --tree=TREE  log output to this directory
-      -u, --update-vcs      update playbooks from a version control system (vcs)
+      -u, --update-source   update playbooks from sources(git, url, etc...)
       -v, --verbose         verbose mode (-vvv for more, -vvvv to enable
                             connection debugging)
       --version             show program's version number and exit
@@ -202,7 +226,5 @@ Force update of the playbooks from a VCS such as git
 TODO: cleanup cli output
 
 TODO: more docs
-
-TODO: submit mac port?
 
 TODO: on a mac make cache dir go to ~/Library/Caches/Battleschool

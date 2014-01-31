@@ -54,8 +54,7 @@ setup(name='battleschool',
           'battleschool.source',
       ],
       scripts=[
-          'bin/battle',
-          'bin/battle-bootstrap'
+          'bin/battle'
       ],
       data_files=data_files
 )

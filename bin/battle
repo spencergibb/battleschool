@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-#/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python
-
-#export PYTHONPATH=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages
 
 import os
 import sys
@@ -18,17 +15,22 @@ import ansible.utils.template
 from ansible import callbacks
 from ansible import errors
 from ansible import utils
-from ansible.callbacks import display
 
 from battleschool.printing import *
 from battleschool.source.git import Git
 from battleschool.source.local import Local
+from battleschool.source.url import Url
+
+from copy import deepcopy
+from tempfile import gettempdir
+from urlparse import urlparse
 
 
-#TODO: verify environment: macports, ansible
+#TODO: verify environment: ansible
 
 def getSourceHandlers():
-    handlers = [Git, Local]
+    handlers = [Git, Local, Url]
+    # TODO: auto load sources
     # for name, obj in inspect.getmembers(sourcepkg):
     #     if inspect.ismodule(obj):
     #         package = obj.__dict__['__package__']
@@ -40,13 +42,41 @@ def getSourceHandlers():
     return handlers
 
 
+def load_config_path(options, inventory, sshpass, sudopass):
+    if options.config_file:
+        config_file = options.config_file
+        parse_result = urlparse(config_file)
+        if parse_result.scheme:
+            url_options = deepcopy(options)
+            url_options.update_sources = True
+            url_options.cache_dir = gettempdir()
+            name = 'downloaded_config.yml'
+            sources = {
+                'url': [
+                    {'name': name, 'url': config_file}
+                ]
+            }
+            display(banner("Downloading config from url"))
+            url = Url(url_options, sources)
+            files = url.run(inventory, sshpass, sudopass)
+            return files[0]
+        else:
+            return config_file
+
+    return "%s/config.yml" % options.config_dir
+
+
 def main(args):
 
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
+    # TODO: make battle OO or more modular
+    #-----------------------------------------------------------
+    # make ansible defaults, battleschool defaults
     AC.DEFAULT_HOST_LIST = C.DEFAULT_HOST_LIST
     AC.DEFAULT_SUDO_FLAGS = C.DEFAULT_SUDO_FLAGS
 
+    #-----------------------------------------------------------
     # create parser for CLI options
     usage = "%prog"
     parser = utils.base_parser(
@@ -73,18 +103,24 @@ def main(args):
                       dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
-    parser.add_option('-u', '--update-vcs', dest='update_vcs', default=False, action='store_true',
-                      help="update playbooks from a version control system (vcs)")
+    parser.add_option('--config-file', dest='config_file', default=None,
+                      help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
+    parser.add_option('-u', '--update-source', dest='update_sources', default=False, action='store_true',
+                      help="update playbooks from sources(git, url, etc...)")
 
     options, args = parser.parse_args(args)
 
     playbooks_to_run = [C.DEFAULT_PLAYBOOK]
 
+    #-----------------------------------------------------------
+    # setup inventory
     inventory = ansible.inventory.Inventory(options.inventory)
     inventory.subset(options.subset)
     if len(inventory.list_hosts()) == 0:
         raise errors.AnsibleError("provided hosts list is empty")
 
+    #-----------------------------------------------------------
+    # setup default options
     sshpass = None
     sudopass = None
     options.remote_user = AC.DEFAULT_REMOTE_USER
@@ -101,32 +137,53 @@ def main(args):
         extra_vars = utils.parse_kv(options.extra_vars)
     only_tags = options.tags.split(",")
 
+    #-----------------------------------------------------------
+    # setup config_dir and battleschool_dir
     if options.config_dir:
         battleschool_dir = options.config_dir
     else:
         options.config_dir = battleschool_dir
 
-    config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
-    options.cache_dir = "%s/cache" % battleschool_dir
-
-    output = subprocess.check_output(["/usr/bin/sw_vers", "-productVersion"])
-    mac_version = output.split()[-1].split(".")
-
-    if extra_vars is None:
-        extra_vars = dict()
-
-    extra_vars['battleschool_config_dir'] = battleschool_dir
-    extra_vars['battleschool_cache_dir'] = options.cache_dir
-    extra_vars['mac_version'] = mac_version
-    extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
-
-    handlers = getSourceHandlers()
-
+    #-----------------------------------------------------------
+    # setup module_path
     if options.module_path is None:
         options.module_path = AC.DEFAULT_MODULE_PATH
 
     if C.DEFAULT_MODULE_PATH not in options.module_path:
         options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
+
+    #-----------------------------------------------------------
+    # parse config data
+    config_path = load_config_path(options, inventory, sshpass, sudopass)
+    config_data = utils.parse_yaml_from_file(config_path)
+
+    #-----------------------------------------------------------
+    # set config_dir
+    if "cache_dir" in config_data:
+        options.cache_dir = os.path.expanduser(config_data["cache_dir"])
+    else:
+        options.cache_dir = "%s/cache" % battleschool_dir
+
+    #-----------------------------------------------------------
+    # setup extra_vars for later use
+    if extra_vars is None:
+        extra_vars = dict()
+
+    extra_vars['battleschool_config_dir'] = battleschool_dir
+    extra_vars['battleschool_cache_dir'] = options.cache_dir
+
+    #-----------------------------------------------------------
+    # set mac_version for extra_vars
+    sw_vers = "/usr/bin/sw_vers"
+    if os.path.exists(sw_vers) and os.path.isfile(sw_vers):
+        output = subprocess.check_output([sw_vers, "-productVersion"])
+        mac_version = output.split()[-1].split(".")
+        extra_vars['mac_version'] = mac_version
+        extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
+
+    #-----------------------------------------------------------
+    # setup and run source handlers
+    handlers = getSourceHandlers()
 
     if 'sources' in config_data:
         display(banner("Updating sources"))
@@ -138,14 +195,16 @@ def main(args):
             for playbook in playbooks:
                 playbooks_to_run.append(playbook)
 
+    #-----------------------------------------------------------
+    # validate playbooks
     for playbook in playbooks_to_run:
         if not os.path.exists(playbook):
             raise errors.AnsibleError("the playbook: %s could not be found" % playbook)
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
-
-    # run all playbooks specified on the command line
+    #-----------------------------------------------------------
+    # run all playbooks specified from config
     for playbook in playbooks_to_run:
         stats = callbacks.AggregateStats()
 
