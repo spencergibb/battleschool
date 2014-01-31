@@ -21,6 +21,10 @@ from battleschool.source.git import Git
 from battleschool.source.local import Local
 from battleschool.source.url import Url
 
+from copy import deepcopy
+from tempfile import gettempdir
+from urlparse import urlparse
+
 
 #TODO: verify environment: ansible
 
@@ -36,6 +40,30 @@ def getSourceHandlers():
     #                     print "Loading %s/%s" % (srcName, srcObj)
     #                     handlers.append(srcObj)
     return handlers
+
+
+def load_config_path(options, inventory, sshpass, sudopass):
+    if options.config_file:
+        config_file = options.config_file
+        parse_result = urlparse(config_file)
+        if parse_result.scheme:
+            url_options = deepcopy(options)
+            url_options.update_sources = True
+            url_options.cache_dir = gettempdir()
+            name = 'downloaded_config.yml'
+            sources = {
+                'url': [
+                    {'name': name, 'url': config_file}
+                ]
+            }
+            display(banner("Downloading config from url"))
+            url = Url(url_options, sources)
+            files = url.run(inventory, sshpass, sudopass)
+            return files[0]
+        else:
+            return config_file
+
+    return "%s/config.yml" % options.config_dir
 
 
 def main(args):
@@ -75,6 +103,8 @@ def main(args):
                       dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
+    parser.add_option('--config-file', dest='config_file', default=None,
+                      help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
     parser.add_option('-u', '--update-source', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
 
@@ -115,8 +145,17 @@ def main(args):
         options.config_dir = battleschool_dir
 
     #-----------------------------------------------------------
+    # setup module_path
+    if options.module_path is None:
+        options.module_path = AC.DEFAULT_MODULE_PATH
+
+    if C.DEFAULT_MODULE_PATH not in options.module_path:
+        options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
+
+    #-----------------------------------------------------------
     # parse config data
-    config_data = utils.parse_yaml_from_file("%s/config.yml" % battleschool_dir)
+    config_path = load_config_path(options, inventory, sshpass, sudopass)
+    config_data = utils.parse_yaml_from_file(config_path)
 
     #-----------------------------------------------------------
     # set config_dir
@@ -126,29 +165,25 @@ def main(args):
         options.cache_dir = "%s/cache" % battleschool_dir
 
     #-----------------------------------------------------------
-    # set mac_version TODO: only set mac_version if on a mac
-    output = subprocess.check_output(["/usr/bin/sw_vers", "-productVersion"])
-    mac_version = output.split()[-1].split(".")
-
-    #-----------------------------------------------------------
     # setup extra_vars for later use
     if extra_vars is None:
         extra_vars = dict()
 
     extra_vars['battleschool_config_dir'] = battleschool_dir
     extra_vars['battleschool_cache_dir'] = options.cache_dir
-    extra_vars['mac_version'] = mac_version
-    extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
+
+    #-----------------------------------------------------------
+    # set mac_version for extra_vars
+    sw_vers = "/usr/bin/sw_vers"
+    if os.path.exists(sw_vers) and os.path.isfile(sw_vers):
+        output = subprocess.check_output([sw_vers, "-productVersion"])
+        mac_version = output.split()[-1].split(".")
+        extra_vars['mac_version'] = mac_version
+        extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 
     #-----------------------------------------------------------
     # setup and run source handlers
     handlers = getSourceHandlers()
-
-    if options.module_path is None:
-        options.module_path = AC.DEFAULT_MODULE_PATH
-
-    if C.DEFAULT_MODULE_PATH not in options.module_path:
-        options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
 
     if 'sources' in config_data:
         display(banner("Updating sources"))
