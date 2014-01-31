@@ -15,17 +15,18 @@ import ansible.utils.template
 from ansible import callbacks
 from ansible import errors
 from ansible import utils
-from ansible.callbacks import display
 
 from battleschool.printing import *
 from battleschool.source.git import Git
 from battleschool.source.local import Local
+from battleschool.source.url import Url
 
 
-#TODO: verify environment: macports, ansible
+#TODO: verify environment: ansible
 
 def getSourceHandlers():
-    handlers = [Git, Local]
+    handlers = [Git, Local, Url]
+    # TODO: auto load sources
     # for name, obj in inspect.getmembers(sourcepkg):
     #     if inspect.ismodule(obj):
     #         package = obj.__dict__['__package__']
@@ -74,8 +75,8 @@ def main(args):
                       dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
-    parser.add_option('-u', '--update-vcs', dest='update_vcs', default=False, action='store_true',
-                      help="update playbooks from a version control system (vcs)")
+    parser.add_option('-u', '--update-source', dest='update_sources', default=False, action='store_true',
+                      help="update playbooks from sources(git, url, etc...)")
 
     options, args = parser.parse_args(args)
 

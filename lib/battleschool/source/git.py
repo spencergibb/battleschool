@@ -19,7 +19,7 @@ class Git(Source):
         force = "no"
         update = "no"
 
-        if self.options.update_vcs:
+        if self.options.update_sources:
             update = "yes"
             force = "yes"
 
