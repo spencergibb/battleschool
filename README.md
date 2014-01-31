@@ -226,5 +226,3 @@ Force update of the playbooks from a VCS such as git
 TODO: cleanup cli output
 
 TODO: more docs
-
-TODO: on a mac make cache dir go to ~/Library/Caches/Battleschool

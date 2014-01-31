@@ -23,6 +23,7 @@ from battleschool.source.url import Url
 
 from copy import deepcopy
 from tempfile import gettempdir
+from sys import platform
 from urlparse import urlparse
 
 
@@ -157,10 +158,13 @@ def main(args):
     config_path = load_config_path(options, inventory, sshpass, sudopass)
     config_data = utils.parse_yaml_from_file(config_path)
 
+
     #-----------------------------------------------------------
     # set config_dir
     if "cache_dir" in config_data:
         options.cache_dir = os.path.expanduser(config_data["cache_dir"])
+    elif platform == "darwin": #OS X
+        options.cache_dir = os.path.expanduser("~/Library/Caches/battleschool")
     else:
         options.cache_dir = "%s/cache" % battleschool_dir
 
