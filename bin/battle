@@ -23,8 +23,10 @@ from battleschool.source.url import Url
 
 from copy import deepcopy
 from tempfile import gettempdir
+from sys import platform as _platform
 from urlparse import urlparse
 
+import platform
 
 #TODO: verify environment: ansible
 
@@ -105,7 +107,7 @@ def main(args):
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
     parser.add_option('--config-file', dest='config_file', default=None,
                       help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
-    parser.add_option('-u', '--update-source', dest='update_sources', default=False, action='store_true',
+    parser.add_option('-u', '--update-sources', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
 
     options, args = parser.parse_args(args)
@@ -157,10 +159,13 @@ def main(args):
     config_path = load_config_path(options, inventory, sshpass, sudopass)
     config_data = utils.parse_yaml_from_file(config_path)
 
+
     #-----------------------------------------------------------
     # set config_dir
     if "cache_dir" in config_data:
         options.cache_dir = os.path.expanduser(config_data["cache_dir"])
+    elif _platform == "darwin": #OS X
+        options.cache_dir = os.path.expanduser("~/Library/Caches/battleschool")
     else:
         options.cache_dir = "%s/cache" % battleschool_dir
 
@@ -174,10 +179,8 @@ def main(args):
 
     #-----------------------------------------------------------
     # set mac_version for extra_vars
-    sw_vers = "/usr/bin/sw_vers"
-    if os.path.exists(sw_vers) and os.path.isfile(sw_vers):
-        output = subprocess.check_output([sw_vers, "-productVersion"])
-        mac_version = output.split()[-1].split(".")
+    if _platform == "darwin":
+        mac_version = platform.mac_ver()[0].split(".")
         extra_vars['mac_version'] = mac_version
         extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 

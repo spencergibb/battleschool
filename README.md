@@ -5,6 +5,8 @@ ala [boxen](http://boxen.github.com/) which uses [puppet](http://puppetlabs.com/
 [kitchenplan](https://github.com/kitchenplan/kitchenplan) which uses [chef](http://docs.opscode.com/)
 Built on and for macs, but should be usable on Linux
 
+See this [blog post](http://spencer.gibb.us/blog/2014/02/03/introducing-battleschool) for some background.
+
 ### install
 
     #if needed
@@ -68,6 +70,7 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
              #- xtra-finder.yml
 
 [Here is my config.yml](https://db.tt/aG2uyydU)
+
 [Here is my playbook.yml](https://db.tt/VcyI9dvr)
 
 ### explanation of ~/.battleschool/config.yml
@@ -227,4 +230,4 @@ TODO: cleanup cli output
 
 TODO: more docs
 
-TODO: on a mac make cache dir go to ~/Library/Caches/Battleschool
+TODO: default to ask sudo pass (simpler options).  Only don't ask if --no-sudo-pass is true
