@@ -107,7 +107,7 @@ def main(args):
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
     parser.add_option('--config-file', dest='config_file', default=None,
                       help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
-    parser.add_option('-u', '--update-source', dest='update_sources', default=False, action='store_true',
+    parser.add_option('-u', '--update-sources', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
 
     options, args = parser.parse_args(args)
