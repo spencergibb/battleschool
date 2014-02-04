@@ -227,3 +227,5 @@ Force update of the playbooks from a VCS such as git
 TODO: cleanup cli output
 
 TODO: more docs
+
+TODO: default to ask sudo pass (simpler options).  Only don't ask if --no-sudo-pass is true
