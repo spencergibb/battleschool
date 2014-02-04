@@ -5,6 +5,8 @@ ala [boxen](http://boxen.github.com/) which uses [puppet](http://puppetlabs.com/
 [kitchenplan](https://github.com/kitchenplan/kitchenplan) which uses [chef](http://docs.opscode.com/)
 Built on and for macs, but should be usable on Linux
 
+See this [blog post](http://spencer.gibb.us/blog/2014/02/03/introducing-battleschool) for some background.
+
 ### install
 
     #if needed
