@@ -12,7 +12,7 @@ from distutils.core import setup
 from battleschool.constants import DIST_MODULE_PATH
 
 long_description = """
-Development environment provisioning using ansible (http://www.ansibleworks.com/docs/),
+Development environment provisioning using ansible (http://docs.ansible.com),
 ala boxen (http://boxen.github.com/) which uses puppet (http://puppetlabs.com/puppet/what-is-puppet) and
 kitchenplan (https://github.com/kitchenplan/kitchenplan) which uses chef (http://docs.opscode.com/)
 Built on and for macs, but should be usable on Linux
