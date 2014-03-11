@@ -27,9 +27,63 @@ import abc
 import hashlib
 import os
 import shutil
+import subprocess
 import tempfile
+import traceback
 
 from os import path
+
+
+def run_command(module, args, check_rc=False, close_fds=False, executable=None, data=None, cwd=None):
+    '''
+    Execute a command, returns rc, stdout, and stderr.
+    args is the command to run
+    If args is a list, the command will be run with shell=False.
+    Otherwise, the command will be run with shell=True when args is a string.
+    Other arguments:
+    - check_rc (boolean)  Whether to call fail_json in case of
+                          non zero RC.  Default is False.
+    - close_fds (boolean) See documentation for subprocess.Popen().
+                          Default is False.
+    - executable (string) See documentation for subprocess.Popen().
+                          Default is None.
+    - cwd (string) See documentation for subprocess.Popen().
+                          Default is None.
+    '''
+    if isinstance(args, list):
+        shell = False
+    elif isinstance(args, basestring):
+        shell = True
+    else:
+        msg = "Argument 'args' to run_command must be list or string"
+        module.fail_json(rc=257, cmd=args, msg=msg)
+    rc = 0
+    msg = None
+    st_in = None
+    if data:
+        st_in = subprocess.PIPE
+    try:
+        cmd = subprocess.Popen(args,
+                               executable=executable,
+                               shell=shell,
+                               close_fds=close_fds,
+                               stdin=st_in,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               cwd=cwd)
+        if data:
+            cmd.stdin.write(data)
+            cmd.stdin.write('\n')
+        out, err = cmd.communicate()
+        rc = cmd.returncode
+    except (OSError, IOError), e:
+        module.fail_json(rc=e.errno, msg=str(e), cmd=args)
+    except:
+        module.fail_json(rc=257, msg=traceback.format_exc(), cmd=args)
+    if rc != 0 and check_rc:
+        msg = err.rstrip()
+        module.fail_json(cmd=args, rc=rc, stdout=out, stderr=err, msg=msg)
+    return rc, out, err
 
 
 class Archive(object):
@@ -42,6 +96,7 @@ class Archive(object):
         self.curl_path = module.get_bin_path('curl', True, ['/usr/bin'])
         self.chown_path = module.get_bin_path('chown', True)
         self.pkg = pkg
+        self._pkg_path = None
         return
 
     @abc.abstractmethod
@@ -61,6 +116,12 @@ class Archive(object):
 
         return self.params['url']
 
+
+    def chown_dir(self, chown_user, target_path):
+        if chown_user is not None:
+            rc, out, err = self.module.run_command("%s -R %s %s" % (self.chown_path, chown_user, target_path))
+            if rc > 0:
+                self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
 
     def acquire(self):
         acquired = False
@@ -83,17 +144,21 @@ class Archive(object):
             if exists(self.params, 'curl_opts'):
                 curl_opts = self.params['curl_opts']
 
-            #TODO: use environment variable to override cachedir
-            download_dir = path.expanduser("~/.battleschool/cache/downloads")
-            if not path.exists(download_dir):
-                os.makedirs(download_dir)
-
             #TODO: make chown optional?
             if exists(os.environ, 'SUDO_USER'):
                 chown_user = os.environ['SUDO_USER']
             else:
                 chown_user = None
             # self.module.exit_json(changed=False, msg="chown_user %s" % chown_user)
+
+            #TODO: use environment variable to override cachedir
+            download_dir = path.expanduser("~/.battleschool/cache/downloads")
+            if not path.exists(download_dir):
+                os.makedirs(download_dir)
+                #TODO: only chown downloaded item, only chown if just downloaded
+                self.chown_dir(chown_user, download_dir)
+            # self.module.exit_json(changed=False, msg="download_dir %s" % download_dir)
+            # self.module.exit_json(changed=False, msg="BATTLESCHOOL_CACHE_DIR %s" % os.environ.get('BATTLESCHOOL_CACHE_DIR', ""))
 
             #TODO: verify write perms of dest parent
             if exists(self.params, 'dest'):
@@ -102,7 +167,7 @@ class Archive(object):
                 if not path.isabs(dest):
                     dest = "%s/%s" % (download_dir, dest)
 
-                pre_cmd = ""
+                cwd = None
                 output_opts = "--output %s" % dest
                 do_download = not path.exists(dest)
             else:
@@ -110,8 +175,9 @@ class Archive(object):
                 dest = "%s/%s" % (download_dir, sha1)
                 if not path.exists(dest):
                     os.makedirs(dest)
+                    self.chown_dir(chown_user, dest)
                 do_download = not os.listdir(dest)
-                pre_cmd = "cd %s && " % dest
+                cwd = dest
                 output_opts = "--remote-name --remote-header-name"
 
             # self.module.exit_json(changed=False, msg="pre_cmd %s, output_opts %s, curl_opts %s, do_download %s"
@@ -129,8 +195,10 @@ class Archive(object):
                         os.unlink(file_path)
 
             if do_download:
-                rc, out, err = self.module.run_command("%s %s --insecure --silent --location %s %s %s" %
-                                                       (pre_cmd, self.curl_path, output_opts, curl_opts, url))
+                download_cmd = "%s --insecure --silent --location %s %s %s" % (
+                        self.curl_path, output_opts, curl_opts, url)
+                # self.module.exit_json(changed=False, msg="download_cmd %s" % download_cmd)
+                rc, out, err = run_command(self.module, download_cmd, cwd=cwd)
                 if rc > 0:
                     self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
                 acquired = True
@@ -138,6 +206,7 @@ class Archive(object):
             if not exists(self.params, 'dest'):
                 # need to find out the path of the downloaded file
                 files = os.listdir(dest)
+                # self.module.exit_json(changed=False, msg="files %s" % files)
                 num_files = len(files)
 
                 if num_files != 1:
@@ -145,13 +214,11 @@ class Archive(object):
                                               % (self.pkg.name(), num_files, dest))
 
                 dest = "%s/%s" % (dest, files[0])
-                # self.module.exit_json(changed=False, msg="dest %s" % dest)
+            # self.module.exit_json(changed=False, msg="dest %s" % dest)
 
-            #TODO: only chown downloaded item, only chown if just downloaded
-            if chown_user is not None:
-                rc, out, err = self.module.run_command("%s -R %s %s" % (self.chown_path, chown_user, download_dir))
-                if rc > 0:
-                    self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+            #TODO: only chown downloaded item
+            if do_download and acquired:
+                self.chown_dir(chown_user, download_dir)
 
             self._pkg_path = dest
 
@@ -196,8 +263,9 @@ class DmgArchive(Archive):
 
         #if dmg mount and record volume path
         #hdiutil attach Vagrant-1.3.0.dmg | grep Volumes | awk '{print $3}'
-        command = "%s %s attach %s %s " % (hdi_pre, self.hdiutil_path, self._pkg_path, hdi_post)
-        rc, out, err = self.module.run_command(command)
+        command = "%s %s attach \"%s\" %s " % (hdi_pre, self.hdiutil_path, self._pkg_path, hdi_post)
+        # self.module.exit_json(changed=False, msg="hdicmd: %s" % command)
+        rc, out, err = run_command(self.module, command)
         if rc > 0:
             self.module.fail_json(msg="failed to install %s: rc: %s, %s, err: %s" % (self.pkg.name(), rc, out, err))
 
@@ -256,14 +324,17 @@ class PkgPackage(Package):
         self.pkgutil_path = module.get_bin_path('pkgutil', True, ['/usr/sbin'])
         #TODO: add creates which would override pkg_version
 
-        #find installed version
         self._pkg_name = self.params['pkg_name']
-        rc, out, err = module.run_command("%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
-                                          (self.pkgutil_path, self._pkg_name))
+        #find installed version
+        self._version = self.find_version(module)
+        # self.module.exit_json(changed=False, msg="_version %s, _pkg_name %s" % (self._version, self._pkg_name))
+
+    def find_version(self, module):
+        rc, out, err = run_command(self.module, "%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
+                                  (self.pkgutil_path, self._pkg_name))
         if rc > 0:
             module.fail_json(msg="failed to install %s: %s %s" % (self._pkg_name, out, err))
-
-        self._version = out.strip()
+        return out.strip()
 
     def install(self, pkg_path):
         #install package file
@@ -273,6 +344,8 @@ class PkgPackage(Package):
         if rc > 0:
             return out, err
 
+        #no error, update the version from pkg_util
+        self._version = self.find_version(self.module)
         return False
 
     def is_installed(self):
@@ -366,6 +439,7 @@ class Installer(object):
 
     def install(self, acquire_only):
         pkg = self._instantiate('pkg_type', 'Package')
+        # self.module.exit_json(changed=False, msg="params %s" % self.params)
 
         if pkg.is_installed() and not acquire_only:
             self.module.exit_json(changed=False, version=pkg.version(), msg="package %s already present" % pkg.name())

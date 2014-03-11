@@ -2,7 +2,6 @@
 
 import os
 import sys
-import subprocess
 
 import ansible.constants as AC
 import battleschool.constants as C
@@ -16,6 +15,7 @@ from ansible import callbacks
 from ansible import errors
 from ansible import utils
 
+from battleschool.__init__ import __version__
 from battleschool.printing import *
 from battleschool.source.git import Git
 from battleschool.source.local import Local
@@ -91,6 +91,7 @@ def main(args):
         diff_opts=True,
         output_opts=True
     )
+    parser.version = "%s %s" % ("battleschool", __version__)
     parser.add_option('-e', '--extra-vars', dest="extra_vars", default=None,
                       help="set additional key=value variables from the CLI")
     parser.add_option('--tags', dest='tags', default='all',
@@ -111,8 +112,9 @@ def main(args):
                       help="update playbooks from sources(git, url, etc...)")
 
     options, args = parser.parse_args(args)
+    # options.connection = 'local'
 
-    playbooks_to_run = [C.DEFAULT_PLAYBOOK]
+    playbooks_to_run = []#[C.DEFAULT_PLAYBOOK]
 
     #-----------------------------------------------------------
     # setup inventory
@@ -129,7 +131,9 @@ def main(args):
     if not options.listhosts and not options.syntax and not options.listtasks:
         options.ask_pass = AC.DEFAULT_ASK_PASS
         options.ask_sudo_pass = options.ask_sudo_pass or AC.DEFAULT_ASK_SUDO_PASS
-        ( sshpass, sudopass ) = utils.ask_passwords(ask_pass=options.ask_pass, ask_sudo_pass=options.ask_sudo_pass)
+        passwds = utils.ask_passwords(ask_pass=options.ask_pass, ask_sudo_pass=options.ask_sudo_pass)
+        sshpass = passwds[0]
+        sudopass = passwds[1]
         # if options.sudo_user or options.ask_sudo_pass:
         #     options.sudo = True
         options.sudo_user = AC.DEFAULT_SUDO_USER
@@ -168,6 +172,8 @@ def main(args):
         options.cache_dir = os.path.expanduser("~/Library/Caches/battleschool")
     else:
         options.cache_dir = "%s/cache" % battleschool_dir
+
+    os.environ["BATTLESCHOOL_CACHE_DIR"] = options.cache_dir
 
     #-----------------------------------------------------------
     # setup extra_vars for later use
@@ -216,6 +222,9 @@ def main(args):
 
         runner_cb = BattleschoolRunnerCallbacks()
         playbook_cb = BattleschoolCallbacks()
+        #TODO: option to use default callbacks
+        # runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
+        # playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
 
         if options.step:
             playbook_cb.step = options.step

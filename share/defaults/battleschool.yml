@@ -6,6 +6,3 @@
   tasks:
     - name: print from playbook
       debug: msg="in battleschool.yml"
-
-    #- include: {{item}}
-    #  with_items: playbooks
