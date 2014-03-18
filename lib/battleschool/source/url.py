@@ -23,7 +23,7 @@ class Url(Source):
         if self.options.update_sources:
             force = "yes"
 
-        module_args = "url=%s dest=%s/%s force=%s" % \
+        module_args = "url=%s dest=%s/%s force=%s validate_certs=no " % \
                       (source["url"], self.dest_dir(source), source["name"], force)
 
         if "playbooks" not in source:

@@ -23,6 +23,6 @@ class Git(Source):
             update = "yes"
             force = "yes"
 
-        module_args = "repo=%s dest=%s force=%s update=%s" % \
+        module_args = "repo=%s dest=%s force=%s update=%s " % \
                       (source['repo'], self.dest_dir(source), force, update)
         return module_args

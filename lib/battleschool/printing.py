@@ -72,13 +72,20 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
     """ callbacks for use by battles """
 
     def get_play(self):
+        if self.runner:
+            return self.runner
         if self.task:
             return self.task
         return self.play
 
+    def get_name(self):
+        if self.runner:
+            return self.get_play().module_name
+        return self.get_play().name
+
     def on_failed(self, host, res, ignore_errors=False):
         if not ignore_errors:
-            display("\tTask FAILED: %s %s" % (self.get_play().name, res['msg']), color="red")
+            display("\tTask FAILED: %s %s" % (self.get_name(), res['msg']), color="red")
         super(BattleschoolRunnerCallbacks, self).on_failed(host, res, ignore_errors=ignore_errors)
 
     def on_ok(self, host, res):
@@ -92,7 +99,7 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
 
         try:
             if self.get_play():
-                display("\tTask OK: %s%s" % (self.get_play().name, msg))
+                display("\tTask OK: %s%s" % (self.get_name(), msg))
         except AttributeError:
             invocation = res['invocation']
             msg = invocation['module_args']
@@ -122,15 +129,15 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
         super(BattleschoolRunnerCallbacks, self).on_unreachable(host, results)
 
     def on_skipped(self, host, item=None):
-        display("\tTask skipped: %s" % self.get_play().name, color="yellow")
+        display("\tTask skipped: %s" % self.get_name(), color="yellow")
         super(BattleschoolRunnerCallbacks, self).on_skipped(host, item)
 
     def on_error(self, host, err):
-        display("\tTask ERROR: %s%s" % (self.get_play().name, err), color="red")
+        display("\tTask ERROR: %s%s" % (self.get_name(), err), color="red")
         super(BattleschoolRunnerCallbacks, self).on_error(host, err)
 
     def on_no_hosts(self):
-        display("\tTask NO HOSTS: %s" % self.get_play().name, color="red")
+        display("\tTask NO HOSTS: %s" % self.get_name(), color="red")
         super(BattleschoolRunnerCallbacks, self).on_no_hosts()
 
     def on_async_poll(self, host, res, jid, clock):
