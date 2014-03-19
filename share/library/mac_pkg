@@ -245,6 +245,29 @@ class ZipArchive(Archive):
         shutil.rmtree(self.target_dir)
 
 
+class TarArchive(Archive):
+
+    def __init__(self, module, pkg):
+        super(TarArchive, self).__init__(module, pkg)
+        self.tar_path = module.get_bin_path('tar', True, ['/usr/bin'])
+        self.tar_opts = self.params['tar_opts']
+        #TODO: override target_dir
+        self.target_dir = tempfile.mkdtemp(suffix='-tar-extract', prefix='mac_pkg-')
+
+    def open(self):
+        #self.module.exit_json(changed=False,msg="tar_path %s, tar_opts %s, pkg_path %s, target_dir %s, archive_path %s"
+        #                                        % (self.tar_path, self.tar_opts, self.pkg_path(), self.target_dir,
+        #                                           self.params['archive_path']))
+        rc, out, err = self.module.run_command("%s %s %s -C %s" % (self.tar_path, self.tar_opts, self.pkg_path(),
+                                                                   self.target_dir))
+        if rc > 0:
+            self.module.fail_json(msg="failed to extract tar %s: %s\n\t%s" % (self.pkg_path(), out, err))
+        self._pkg_path = "%s/%s" % (self.target_dir, self.params['archive_path'])
+
+    def close(self):
+        shutil.rmtree(self.target_dir)
+
+
 class DmgArchive(Archive):
 
     def __init__(self, module, pkg):
@@ -374,11 +397,16 @@ class AppPackage(Package):
         super(AppPackage, self).__init__(module)
         if exists(self.params, 'creates'):
             self._app_creates = self.params['creates']
+            if not self._app_creates.startswith("/"):
+                #not an absolute path, prepend /Applications
+                self.set_applications_path('creates')
         elif exists(self.params, 'archive_path'):
-            # TODO: parameterize app destination
-            self._app_creates = '/Applications/%s' % self.params['archive_path']
+            self.set_applications_path('archive_path')
         else:
             self.module.fail_json(msg="for pkg_type=app one of app_creates or archive_path must not be empty")
+
+    def set_applications_path(self, param_name):
+        self._app_creates = '/Applications/%s' % self.params[param_name]
 
     def install(self, pkg_path):
         shutil.copytree(pkg_path, self._app_creates)
@@ -492,12 +520,13 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default="present", choices=["present", "installed"]),
-            archive_type=dict(default="none", choices=["zip", "dmg", "none"]),
+            archive_type=dict(default="none", choices=["zip", "dmg", "tar", "none"]),
             src=dict(aliases=["source"], required=False),
             url=dict(aliases=[], required=False),
             dest=dict(aliases=["destination"], required=False),
             force=dict(default='no', type='bool'),
             curl_opts=dict(aliases=[], required=False),
+            tar_opts=dict(aliases=[], default="xf", required=False),
             archive_path=dict(required=False),
             pkg_type=dict(default="pkg", choices=["pkg", "app", "script"]),
             pkg_name=dict(required=False),
