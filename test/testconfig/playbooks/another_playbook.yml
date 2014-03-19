@@ -6,7 +6,11 @@
       debug: msg="in playbooks/another_playbook.yml"
 
     - name: print os version
-      debug: msg="mac_major_minor_version = {{mac_major_minor_version }}, ansible_distribution = {{ansible_distribution}}, ansible_distribution_version = {{ansible_distribution_version}}"
+      debug: msg="mac_major_minor_version = {{mac_major_minor_version}}, ansible_distribution = {{ansible_distribution}}, ansible_distribution_version = {{ansible_distribution_version}}"
+
+    - name: print mavericks
+      debug: msg="Mavericks"
+      when: mac_major_minor_version == "10.9"
 
     - name: print mountain lion
       debug: msg="Mountain Lion"
