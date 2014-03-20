@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import sys
-
 import ansible.constants as AC
 import battleschool.constants as C
 
@@ -26,7 +23,11 @@ from tempfile import gettempdir
 from sys import platform as _platform
 from urlparse import urlparse
 
+import json
+import os
 import platform
+import sys
+import tempfile
 
 #TODO: verify environment: ansible
 
@@ -94,8 +95,8 @@ def main(args):
     parser.version = "%s %s" % ("battleschool", __version__)
     parser.add_option('-e', '--extra-vars', dest="extra_vars", default=None,
                       help="set additional key=value variables from the CLI")
-    parser.add_option('--tags', dest='tags', default='all',
-                      help="only run plays and tasks tagged with these values")
+    # parser.add_option('--tags', dest='tags', default='all',
+    #                   help="only run plays and tasks tagged with these values")
     parser.add_option('--syntax-check', dest='syntax', action='store_true',
                       help="do a playbook syntax check on the playbook, do not execute the playbook")
     parser.add_option('--list-tasks', dest='listtasks', action='store_true',
@@ -110,6 +111,8 @@ def main(args):
                       help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
     parser.add_option('-u', '--update-sources', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
+    parser.add_option('--acquire-only', dest='acquire_only', default=False, action='store_true',
+                      help="configure mac_pkg module to only aquire package (ie download only")
 
     options, args = parser.parse_args(args)
     # options.connection = 'local'
@@ -141,7 +144,7 @@ def main(args):
         extra_vars = utils.json_loads(options.extra_vars)
     else:
         extra_vars = utils.parse_kv(options.extra_vars)
-    only_tags = options.tags.split(",")
+    only_tags = None  # options.tags.split(",")
 
     #-----------------------------------------------------------
     # setup config_dir and battleschool_dir
@@ -182,6 +185,7 @@ def main(args):
 
     extra_vars['battleschool_config_dir'] = battleschool_dir
     extra_vars['battleschool_cache_dir'] = options.cache_dir
+    extra_vars['mac_pkg_acquire_only'] = options.acquire_only
 
     #-----------------------------------------------------------
     # set mac_version for extra_vars
@@ -189,6 +193,14 @@ def main(args):
         mac_version = platform.mac_ver()[0].split(".")
         extra_vars['mac_version'] = mac_version
         extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
+
+    #-----------------------------------------------------------
+    # serialize extra_vars since there is now way to pass data
+    # to a module without modifying every playbook
+    tempdir = tempfile.gettempdir()
+    extra_vars_path = os.path.join(tempdir, "battleschool_extra_vars.json")
+    with open(extra_vars_path, 'w') as f:
+        f.write(json.dumps(extra_vars))
 
     #-----------------------------------------------------------
     # setup and run source handlers
@@ -317,6 +329,7 @@ def main(args):
             display("ERROR: %s" % e, color='red')
             return 1
 
+    os.remove(extra_vars_path)
     display(banner("Battleschool completed"))
     # TODO: aggregate stats across playbook runs
 
