@@ -25,6 +25,7 @@ EXAMPLES = '''
 
 import abc
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -145,20 +146,18 @@ class Archive(object):
                 curl_opts = self.params['curl_opts']
 
             #TODO: make chown optional?
-            if exists(os.environ, 'SUDO_USER'):
-                chown_user = os.environ['SUDO_USER']
-            else:
-                chown_user = None
+            chown_user = get_env('sudo_user', None)
             # self.module.exit_json(changed=False, msg="chown_user %s" % chown_user)
 
             #TODO: use environment variable to override cachedir
-            download_dir = path.expanduser("~/.battleschool/cache/downloads")
+            cache_dir = path.expanduser(get_env("battleschool_cache_dir", "~/Library/Caches/battleschool"))
+            download_dir = path.join(cache_dir, "downloads")
             if not path.exists(download_dir):
                 os.makedirs(download_dir)
                 #TODO: only chown downloaded item, only chown if just downloaded
                 self.chown_dir(chown_user, download_dir)
             # self.module.exit_json(changed=False, msg="download_dir %s" % download_dir)
-            # self.module.exit_json(changed=False, msg="BATTLESCHOOL_CACHE_DIR %s" % os.environ.get('BATTLESCHOOL_CACHE_DIR', ""))
+            # self.module.exit_json(changed=False, msg="cache_dir %s" % get_env('battleschool_cache_dir', ""))
 
             #TODO: verify write perms of dest parent
             if exists(self.params, 'dest'):
@@ -516,6 +515,28 @@ class Installer(object):
             self.module.fail_json(msg="one of src or url must not be empty")
 
 
+tempdir = tempfile.gettempdir()
+extra_vars_path = path.join(tempdir, "battleschool_extra_vars.json")
+with open(extra_vars_path) as f:
+    extra_vars = json.load(f)
+
+
+def get_env(name, default, converter = None):
+    if name in extra_vars:
+        val = extra_vars[name]
+    elif name in os.environ:
+        val = os.environ[name]
+    elif name.upper() in os.environ:
+        val = os.environ[name.upper()]
+    else:
+        val = default
+
+    if converter:
+        return converter(val)
+    else:
+        return val
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -544,12 +565,9 @@ def main():
 
     installer.validate()
 
-    if 'MAC_PKG_ACQUIRE_ONLY' in os.environ:
-        acquire_only = module.boolean(os.environ['MAC_PKG_ACQUIRE_ONLY'])
-    else:
-        acquire_only = False
+    acquire_only = get_env('mac_pkg_acquire_only', False, module.boolean)
 
-    # module.exit_json(changed=False, msg="acquire_only %s, env %s" % (acquire_only, os.environ))
+    # module.exit_json(changed=False, msg="acquire_only %s, env %s" % (acquire_only, extra_vars))
 
     if p["state"] in ["present", "installed"]:
         installer.install(acquire_only)
