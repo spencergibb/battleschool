@@ -144,7 +144,7 @@ def main(args):
         extra_vars = utils.json_loads(options.extra_vars)
     else:
         extra_vars = utils.parse_kv(options.extra_vars)
-    # only_tags = options.tags.split(",")
+    only_tags = None  # options.tags.split(",")
 
     #-----------------------------------------------------------
     # setup config_dir and battleschool_dir
