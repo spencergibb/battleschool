@@ -37,7 +37,7 @@ setup(name='battleschool',
       url='http://32degre.es',
       download_url='https://github.com/32degrees/battleschool/releases',
       license='Apache License, Version 2.0',
-      install_requires=['ansible'],
+      install_requires=['ansible', 'jinja2', 'pyyaml'],  # added jinja2 and pyyaml to fix installs under homebrew pip
       classifiers=[
           "Development Status :: 3 - Alpha",
           "Environment :: Console",
