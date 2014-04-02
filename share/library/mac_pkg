@@ -408,7 +408,9 @@ class AppPackage(Package):
         self._app_creates = '/Applications/%s' % self.params[param_name]
 
     def install(self, pkg_path):
-        shutil.copytree(pkg_path, self._app_creates)
+        # self.module.fail_json(msg="pkg_path %s - _app_creates %s" % (pkg_path, self._app_creates))
+        # TODO: symlinks is an option?
+        shutil.copytree(pkg_path, self._app_creates, symlinks=True)
 
     def is_installed(self):
         return path.exists(self._app_creates)

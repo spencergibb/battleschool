@@ -27,3 +27,7 @@ make sure `~/.pypirc` is setup correctly
 then
 
     python setup.py sdist upload
+
+#### Tips for building on a blank osx vm
+
+http://ntk.me/2012/09/07/os-x-on-os-x/
