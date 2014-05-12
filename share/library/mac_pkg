@@ -519,9 +519,11 @@ class Installer(object):
 
 tempdir = tempfile.gettempdir()
 extra_vars_path = path.join(tempdir, "battleschool_extra_vars.json")
-with open(extra_vars_path) as f:
-    extra_vars = json.load(f)
-
+if path.isfile(extra_vars_path):
+    with open(extra_vars_path) as f:
+        extra_vars = json.load(f)
+else:
+    extra_vars = {}
 
 def get_env(name, default, converter = None):
     if name in extra_vars:
