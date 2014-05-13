@@ -16,7 +16,7 @@ See this [blog post](http://spencer.gibb.us/blog/2014/02/03/introducing-battlesc
 
 ### install preview releases
 
-    sudo pip install https://github.com/32degrees/battleschool/releases/download/v0.x.0/battleschool-0.x.0.tar.gz
+    sudo pip install https://github.com/spencergibb/battleschool/releases/download/v0.x.0/battleschool-0.x.0.tar.gz
 
 ### running battleschool for the first time
 

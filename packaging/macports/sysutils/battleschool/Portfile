@@ -9,9 +9,9 @@ version         devel
 categories      sysutils
 supported_archs noarch
 
-maintainers     spencer@32degre.es
+maintainers     spencer@gibb.us
 
-homepage        http://32degre.es
+homepage        http://spencer.gibb.us
 description     SSH-based configuration management and deployment system
 long_description \
     Battle School is a development environment provisioning system \
@@ -22,7 +22,7 @@ license         Apache
 platforms       darwin
 
 fetch.type         git
-git.url            https://github.com/32degrees/battleschool.git
+git.url            https://github.com/spencergibb/battleschool.git
 git.branch         ${version}
 
 python.default_version  27
