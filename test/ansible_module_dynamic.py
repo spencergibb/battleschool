@@ -87,7 +87,7 @@ def get_distribution():
         try:
             distribution = platform.linux_distribution()[0].capitalize()
             if distribution == 'NA':
-                if os.path.is_file('/etc/system-release'):
+                if os.path.isfile('/etc/system-release'):
                     distribution = 'OtherLinux'
         except:
             # FIXME: MethodMissing, I assume?
