@@ -22,8 +22,7 @@ See this [blog post](http://spencer.gibb.us/blog/2014/02/03/introducing-battlesc
 
     battle --config-file http://somesite/path/to/your/config.yml
 
-As long as you config.yml doesn't have a source.local section (see configuration below), you don't need to download or
-create a configuration for the first time.
+As long as your `config.yml` doesn't have a `source.local` section (see [configuration](#configuration) below), you don't need to download or create a configuration for the first time.
 
 ### running battleschool
 
@@ -33,9 +32,9 @@ create a configuration for the first time.
 
 *NOTE: in the future, a default empty configuration will be created if you do not create one*
 
-mkdir ~/.battleschool
+`mkdir ~/.battleschool`
 
-put the following in ~/.battleschool/config.yml and uncomment the items you want intstalled (remove the #)
+put the following in `~/.battleschool/config.yml` and uncomment the items you want intstalled (remove the #)
 
     ---
     sources:
@@ -81,8 +80,8 @@ put the following in ~/.battleschool/config.yml and uncomment the items you want
       local:
         - playbook.yml
 
-Any [ansible playbooks](http://www.ansibleworks.com/docs/#playbooks) located in ~/battleschool/playbooks
-can be listed under local.  Each playbook will be executed in order.  This can useful for custom
+Any [ansible playbooks](http://www.ansibleworks.com/docs/#playbooks) located in `~/.battleschool/playbooks`
+can be listed under local.  Each playbook will be executed in order.  This can be useful for custom
 configuration per workstation.  (You could install apps with homebrew or macports if those are installed, for example)
 
 #### url sources
@@ -103,7 +102,7 @@ you run battleschool.
            - adium.yml
 
 Any git repo that hosts ansible playbooks (specific to battleschool or not) will work here.  Each item under
-playsbooks is the relative location to a playbook in the specified git repository.  In the example above, adium.yml
+playbooks is the relative location to a playbook in the specified git repository.  In the example above, `adium.yml`
 is in the root of the ansible-osx repository.
 
 #### git repo sources
