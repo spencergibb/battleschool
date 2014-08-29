@@ -19,7 +19,10 @@ class Source(object):
 
     def __init__(self, options, sources):
         self.options = options
-        self.sources = sources
+        if (sources):
+            self.sources = sources
+        else:
+            self.sources = {}
         return
 
     @abc.abstractmethod
@@ -30,6 +33,9 @@ class Source(object):
     def module_args(self, source):
         """Override to do something useful.
         """
+
+    def has_source_type(self):
+        return self.type() in self.sources and self.sources[self.type()] is not None
 
     def dest_dir(self, source):
         dest_dir = "%s/%s" % (self.options.cache_dir, source['name'])
@@ -86,7 +92,7 @@ class Source(object):
 
     def run(self, inventory, sshpass, sudopass):
         playbooks = []
-        if self.type() in self.sources and self.sources[self.type()] is not None:
+        if self.has_source_type():
             for source in self.sources[self.type()]:
                 # print source
                 self.run_module(inventory, source, sshpass, sudopass)
@@ -94,7 +100,7 @@ class Source(object):
                 source_playbooks = ["local.yml"]
 
                 #add other playbooks relative to dest_dir from config.yml
-                if "playbooks" in source:
+                if "playbooks" in source and source['playbooks'] is not None:
                     for playbook in source['playbooks']:
                         # support for single level of directories in a playbook repo
                         if type(playbook) is dict:

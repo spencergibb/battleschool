@@ -1,0 +1,18 @@
+# Empty Battleschool config.yml.
+tasks:
+  - name: 'Say whereiam'
+    command: 'echo inside emptyconfig/config.yml'
+
+sources:
+#  local:
+#    - playbook.yml
+
+#  url:
+#    - name: playbook.yml
+#      url: https://db.tt/VcyI9dvr
+
+#  git:
+#    - name: 'osx'
+#      repo: 'https://github.com/spencergibb/ansible-osx'
+#      playbooks:
+#         - adium.yml

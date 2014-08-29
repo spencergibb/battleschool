@@ -3,7 +3,7 @@
 import ansible.constants as AC
 import battleschool.constants as C
 
-#before callbacks import
+# before callbacks import
 AC.DEFAULT_CALLBACK_PLUGIN_PATH = C.DEFAULT_CALLBACK_PLUGIN_PATH
 
 import ansible.playbook
@@ -29,7 +29,7 @@ import platform
 import sys
 import tempfile
 
-#TODO: verify environment: ansible
+# TODO: verify environment: ansible
 
 def getSourceHandlers():
     handlers = [Git, Local, Url]
@@ -70,7 +70,6 @@ def load_config_path(options, inventory, sshpass, sudopass):
 
 
 def main(args):
-
     battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
     # TODO: make battle OO or more modular
@@ -117,7 +116,7 @@ def main(args):
     options, args = parser.parse_args(args)
     # options.connection = 'local'
 
-    playbooks_to_run = []#[C.DEFAULT_PLAYBOOK]
+    playbooks_to_run = []  #[C.DEFAULT_PLAYBOOK]
 
     #-----------------------------------------------------------
     # setup inventory
@@ -164,14 +163,16 @@ def main(args):
     #-----------------------------------------------------------
     # parse config data
     config_path = load_config_path(options, inventory, sshpass, sudopass)
-    config_data = utils.parse_yaml_from_file(config_path)
-
+    if os.path.exists(config_path) and os.path.isfile(config_path):
+        config_data = utils.parse_yaml_from_file(config_path)
+    else:
+        config_data = {}
 
     #-----------------------------------------------------------
     # set config_dir
     if "cache_dir" in config_data:
         options.cache_dir = os.path.expanduser(config_data["cache_dir"])
-    elif _platform == "darwin": #OS X
+    elif _platform == "darwin":  # OS X
         options.cache_dir = os.path.expanduser("~/Library/Caches/battleschool")
     else:
         options.cache_dir = "%s/cache" % battleschool_dir
@@ -206,15 +207,16 @@ def main(args):
     # setup and run source handlers
     handlers = getSourceHandlers()
 
-    if 'sources' in config_data:
-        display(banner("Updating sources"))
+    if 'sources' in config_data and config_data['sources']:
         sources = config_data['sources']
-
+        display(banner("Updating sources"))
         for handler in handlers:
             source = handler(options, sources)
             playbooks = source.run(inventory, sshpass, sudopass)
             for playbook in playbooks:
                 playbooks_to_run.append(playbook)
+    else:
+        display(banner("No sources to update"))
 
     #-----------------------------------------------------------
     # validate playbooks
@@ -329,9 +331,13 @@ def main(args):
             display("ERROR: %s" % e, color='red')
             return 1
 
+    if not playbooks_to_run:
+        display("\tWARNING: no playbooks run!", color='yellow')
+
     os.remove(extra_vars_path)
     display(banner("Battleschool completed"))
     # TODO: aggregate stats across playbook runs
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

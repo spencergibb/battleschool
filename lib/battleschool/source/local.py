@@ -14,7 +14,7 @@ class Local(Source):
     def run(self, inventory, sshpass, sudopass):
         playbooks = []
 
-        if self.type() in self.sources:
+        if self.has_source_type():
             for source in self.sources[self.type()]:
                 playbook = "%s/playbooks/%s" % (self.options.config_dir, source)
                 self.add_playbook(playbooks, playbook)
