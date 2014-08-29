@@ -10,6 +10,8 @@
 
     git checkout master
 
+	 git merge devel
+
     make sdist
 
     git checkout devel #make sure to go back to devel to make changes
