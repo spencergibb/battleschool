@@ -194,7 +194,7 @@ class Archive(object):
                         os.unlink(file_path)
 
             if do_download:
-                download_cmd = "%s --insecure --silent --location %s %s %s" % (
+                download_cmd = "%s --insecure --silent --location %s %s '%s'" % (
                         self.curl_path, output_opts, curl_opts, url)
                 # self.module.exit_json(changed=False, msg="download_cmd %s" % download_cmd)
                 rc, out, err = run_command(self.module, download_cmd, cwd=cwd)
