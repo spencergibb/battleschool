@@ -69,8 +69,9 @@ def load_config_path(options, inventory, sshpass, sudopass):
     return "%s/config.yml" % options.config_dir
 
 
-def main(args):
-    battleschool_dir = "%s/.battleschool" % os.environ['HOME']
+def main(args, battleschool_dir=None):
+    if not battleschool_dir:
+        battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
     # TODO: make battle OO or more modular
     #-----------------------------------------------------------
