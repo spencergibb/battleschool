@@ -122,7 +122,7 @@ class Archive(object):
         if chown_user is not None:
             rc, out, err = self.module.run_command("%s -R %s %s" % (self.chown_path, chown_user, target_path))
             if rc > 0:
-                self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+                self.module.fail_json(msg="failed to chown %s: %s\n\t%s" % (self.pkg.name(), out, err))
 
     def acquire(self):
         acquired = False
@@ -199,7 +199,7 @@ class Archive(object):
                 # self.module.exit_json(changed=False, msg="download_cmd %s" % download_cmd)
                 rc, out, err = run_command(self.module, download_cmd, cwd=cwd)
                 if rc > 0:
-                    self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+                    self.module.fail_json(msg="failed to download %s: %s\n\t%s" % (self.pkg.name(), out, err))
                 acquired = True
 
             if not exists(self.params, 'dest'):
@@ -289,7 +289,7 @@ class DmgArchive(Archive):
         # self.module.exit_json(changed=False, msg="hdicmd: %s" % command)
         rc, out, err = run_command(self.module, command)
         if rc > 0:
-            self.module.fail_json(msg="failed to install %s: rc: %s, %s, err: %s" % (self.pkg.name(), rc, out, err))
+            self.module.fail_json(msg="failed to attach %s: rc: %s, %s, err: %s" % (self.pkg.name(), rc, out, err))
 
         idx = out.index("/Volumes/")
         self.dmg_volume = out[idx:].strip()
@@ -300,7 +300,7 @@ class DmgArchive(Archive):
     def close(self):
         rc, out, err = self.module.run_command("%s unmount \"%s\"" % (self.hdiutil_path, self.dmg_volume))
         if rc > 0:
-            self.module.fail_json(msg="failed to install %s: %s\n\t%s" % (self.pkg.name(), out, err))
+            self.module.fail_json(msg="failed to unmount %s: %s\n\t%s" % (self.pkg.name(), out, err))
 
 
 class NoneArchive(Archive):
@@ -355,7 +355,7 @@ class PkgPackage(Package):
         rc, out, err = run_command(self.module, "%s --pkg-info=%s 2>&1 |grep version| awk '{print $2}'" %
                                   (self.pkgutil_path, self._pkg_name))
         if rc > 0:
-            module.fail_json(msg="failed to install %s: %s %s" % (self._pkg_name, out, err))
+            module.fail_json(msg="failed to find version via pkgutil %s: %s %s" % (self._pkg_name, out, err))
         return out.strip()
 
     def install(self, pkg_path):
@@ -436,7 +436,9 @@ class ScriptPackage(Package):
         # self.module.exit_json(changed=False, msg="_prefix %s, _exe_path %s, _creates %s" % (self._prefix, self._exe_path, self._creates))
 
     def install(self, pkg_path):
-        rc, out, err = self.module.run_command("%s%s \"%s\"" % (self._prefix, self._exe_path, pkg_path))
+        _cmd = "%s%s \"%s\"" % (self._prefix, self._exe_path, pkg_path)
+        # self.module.exit_json(changed=False, msg="_cmd %s" % _cmd)
+        rc, out, err = self.module.run_command(_cmd)
         if rc > 0:
             return out, err
 
@@ -491,7 +493,7 @@ class Installer(object):
 
             if failed:
                 archive.close()
-                self.module.fail_json(msg="failed to install %s: %s %s" % (archive.pkg_path(), failed[0], failed[1]))
+                self.module.fail_json(msg="failed to install package %s: %s %s" % (archive.pkg_path(), failed[0], failed[1]))
 
             archive.close()
             #self.module.exit_json(changed=False, msg="pkg %s, archive %s" % (pkg, archive))
