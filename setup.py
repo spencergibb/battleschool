@@ -37,7 +37,12 @@ setup(name='battleschool',
       url='http://spencer.gibb.us',
       download_url='https://github.com/spencergibb/battleschool/releases',
       license='Apache License, Version 2.0',
-      install_requires=['ansible', 'jinja2', 'pyyaml'],  # added jinja2 and pyyaml to fix installs under homebrew pip
+      # added jinja2 and pyyaml to fix installs under homebrew pip
+      install_requires=[
+          'ansible <= 1.8.4',
+          'jinja2',
+          'pyyaml'
+      ],
       classifiers=[
           "Development Status :: 3 - Alpha",
           "Environment :: Console",
