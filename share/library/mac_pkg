@@ -429,26 +429,34 @@ class ScriptPackage(Package):
         self._creates = self.params['creates']
         self._exe_path = module.get_bin_path(self.params['script_executable'], True, ['/usr/bin', '/usr/local/bin'])
 
-        if exists(self.params, 'script_prefix'):
-            self._prefix = self.params['script_prefix']
-        else:
-            self._prefix = ''
-        # self.module.exit_json(changed=False, msg="_prefix %s, _exe_path %s, _creates %s" % (self._prefix, self._exe_path, self._creates))
+        self._prefix = self.get_param('script_prefix')
+        self._postfix = self.get_param('script_postfix')
+        self._data = self.get_param('script_data', None)
+
+        # self.module.exit_json(changed=False, msg="_prefix %s, _exe_path %s, _postfix %s, _data %s, _creates %s" % (self._prefix, self._exe_path, self._postfix, self._data, self._creates))
 
     def install(self, pkg_path):
-        _cmd = "%s%s \"%s\"" % (self._prefix, self._exe_path, pkg_path)
+        _cmd = "%s%s \"%s\"%s" % (self._prefix, self._exe_path, pkg_path, self._postfix)
         # self.module.exit_json(changed=False, msg="_cmd %s" % _cmd)
-        rc, out, err = self.module.run_command(_cmd)
+        rc, out, err = self.module.run_command(_cmd, data=self._data)
         if rc > 0:
             return out, err
+        # self.module.exit_json(changed=False, msg="rc %s, out %s, err %s" % (rc, out, err))
 
         return False
 
     def is_installed(self):
+        # self.module.exit_json(changed=False, msg="is_installed %s" % path.exists(self._creates))
         return path.exists(self._creates)
 
     def name(self):
         return self._creates
+
+    def get_param(self, key, default=''):
+        if exists(self.params, key):
+            return self.params[key]
+        else:
+            return default
 
     def version(self):
         return "N/A"
@@ -562,6 +570,8 @@ def main():
             dmg_license=dict(default='no', type='bool'),
             script_executable=dict(aliases=["script_exe"], required=False),
             script_prefix=dict(aliases=["script_prefix"], required=False),
+            script_postfix=dict(aliases=["script_postfix"], required=False),
+            script_data=dict(aliases=["script_data"], required=False),
         )
     )
 
