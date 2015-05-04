@@ -84,15 +84,13 @@ def main(args, battleschool_dir=None):
         constants=AC,
         usage=usage,
         connect_opts=True,
-        runas_opts=False,
+        runas_opts=True,
         subset_opts=True,
         check_opts=True,
         diff_opts=True,
         output_opts=True
     )
     parser.version = "%s %s" % ("battleschool", __version__)
-    parser.add_option('-e', '--extra-vars', dest="extra_vars", default=None,
-                      help="set additional key=value variables from the CLI")
     # parser.add_option('--tags', dest='tags', default='all',
     #                   help="only run plays and tasks tagged with these values")
     parser.add_option('--syntax-check', dest='syntax', action='store_true',
@@ -101,13 +99,11 @@ def main(args, battleschool_dir=None):
                       help="do list all tasks that would be executed")
     parser.add_option('--step', dest='step', action='store_true',
                       help="one-step-at-a-time: confirm each task before running")
-    parser.add_option("-s", "--sudo", default=AC.DEFAULT_SUDO, action="store_true",
-                      dest='sudo', help="run operations with sudo (nopasswd)")
     parser.add_option('--config-dir', dest='config_dir', default=None,
                       help="config directory for battleschool (default=%s)" % battleschool_dir)
     parser.add_option('--config-file', dest='config_file', default=None,
                       help="config file for battleschool (default=%s/%s)" % (battleschool_dir, "config.yml"))
-    parser.add_option('-u', '--update-sources', dest='update_sources', default=False, action='store_true',
+    parser.add_option('-X', '--update-sources', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
     parser.add_option('--acquire-only', dest='acquire_only', default=False, action='store_true',
                       help="configure mac_pkg module to only aquire package (ie download only")
@@ -132,7 +128,7 @@ def main(args, battleschool_dir=None):
     if not options.listhosts and not options.syntax and not options.listtasks:
         options.ask_pass = AC.DEFAULT_ASK_PASS
         options.ask_sudo_pass = options.ask_sudo_pass or AC.DEFAULT_ASK_SUDO_PASS
-        passwds = utils.ask_passwords(ask_pass=options.ask_pass, ask_sudo_pass=options.ask_sudo_pass)
+        passwds = utils.ask_passwords(ask_pass=options.ask_pass, become_ask_pass=options.ask_sudo_pass)
         sshpass = passwds[0]
         sudopass = passwds[1]
         # if options.sudo_user or options.ask_sudo_pass:
@@ -140,8 +136,10 @@ def main(args, battleschool_dir=None):
         options.sudo_user = AC.DEFAULT_SUDO_USER
     if options.extra_vars and options.extra_vars[0] in '[{':
         extra_vars = utils.json_loads(options.extra_vars)
-    else:
+    elif options.extra_vars:
         extra_vars = utils.parse_kv(options.extra_vars)
+    else:
+        extra_vars = None
     only_tags = None  # options.tags.split(",")
 
     #-----------------------------------------------------------
@@ -228,6 +226,7 @@ def main(args, battleschool_dir=None):
         if not os.path.isfile(playbook):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
+    become = True
     #-----------------------------------------------------------
     # run all playbooks specified from config
     for playbook in playbooks_to_run:
@@ -257,9 +256,10 @@ def main(args, battleschool_dir=None):
             stats=stats,
             timeout=options.timeout,
             transport=options.connection,
-            sudo=options.sudo,
-            sudo_user=options.sudo_user,
-            sudo_pass=sudopass,
+            become=become,
+            become_method="sudo",
+            become_user=options.sudo_user,
+            become_pass=sudopass,
             extra_vars=extra_vars,
             private_key_file=options.private_key_file,
             only_tags=only_tags,

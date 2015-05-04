@@ -39,7 +39,7 @@ setup(name='battleschool',
       license='Apache License, Version 2.0',
       # added jinja2 and pyyaml to fix installs under homebrew pip
       install_requires=[
-          'ansible <= 1.8.4',
+          'ansible >= 1.9.1',
           'jinja2',
           'pyyaml'
       ],
