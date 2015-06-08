@@ -124,6 +124,7 @@ def main(args, battleschool_dir=None):
     # setup default options
     sshpass = None
     sudopass = None
+    vault_pass = None
     options.remote_user = AC.DEFAULT_REMOTE_USER
     if not options.listhosts and not options.syntax and not options.listtasks:
         options.ask_pass = AC.DEFAULT_ASK_PASS
@@ -131,15 +132,12 @@ def main(args, battleschool_dir=None):
         passwds = utils.ask_passwords(ask_pass=options.ask_pass, become_ask_pass=options.ask_sudo_pass)
         sshpass = passwds[0]
         sudopass = passwds[1]
+        vault_pass = passwds[2]
         # if options.sudo_user or options.ask_sudo_pass:
         #     options.sudo = True
         options.sudo_user = AC.DEFAULT_SUDO_USER
-    if options.extra_vars and options.extra_vars[0] in '[{':
-        extra_vars = utils.json_loads(options.extra_vars)
-    elif options.extra_vars:
-        extra_vars = utils.parse_kv(options.extra_vars)
-    else:
-        extra_vars = None
+
+    extra_vars = utils.parse_extra_vars(options.extra_vars, vault_pass)
     only_tags = None  # options.tags.split(",")
 
     #-----------------------------------------------------------
