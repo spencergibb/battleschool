@@ -85,15 +85,15 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
 
     def on_failed(self, host, res, ignore_errors=False):
         if not ignore_errors:
-            display("\tTask FAILED: %s %s" % (self.get_name(), res['msg']), color="red")
+            display("\tTask FAILED: %s %s" % (self.get_name(), res.get('msg')), color="red")
         super(BattleschoolRunnerCallbacks, self).on_failed(host, res, ignore_errors=ignore_errors)
 
     def on_ok(self, host, res):
         if 'msg' in res:
-            msg = ": %s" % res['msg']
+            msg = ": %s" % res.get('msg')
 
             if 'item' in res:
-                msg = "%s => item=%s" % (msg, res['item'])
+                msg = "%s => item=%s" % (msg, res.get('item'))
         else:
             msg = ''
 
@@ -101,7 +101,7 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
             if self.get_play():
                 display("\tTask OK: %s%s" % (self.get_name(), msg))
         except AttributeError:
-            invocation = res['invocation']
+            invocation = res.get('invocation')
             msg = invocation['module_args']
             module_name = invocation['module_name']
 
@@ -114,7 +114,7 @@ class BattleschoolRunnerCallbacks(DefaultRunnerCallbacks):
                     args[pair[0]] = pair[1]
                 msg = args['repo']
 
-            display("\tTask OK: %s, changed=%s %s" % (module_name, res['changed'], msg))
+            display("\tTask OK: %s, changed=%s %s" % (module_name, res.get('changed'), msg))
         super(BattleschoolRunnerCallbacks, self).on_ok(host, res)
 
     def on_unreachable(self, host, results):
