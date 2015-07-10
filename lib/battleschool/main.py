@@ -107,6 +107,9 @@ def main(args, battleschool_dir=None):
                       help="update playbooks from sources(git, url, etc...)")
     parser.add_option('--acquire-only', dest='acquire_only', default=False, action='store_true',
                       help="configure mac_pkg module to only aquire package (ie download only)")
+    parser.add_option('--use-default-callbacks', dest='use_default_callbacks',
+                      default=False, action='store_true',
+                      help="use default ansible callbacks (to exec vars_prompt, etc.)")
 
     options, args = parser.parse_args(args)
     # options.connection = 'local'
@@ -234,11 +237,12 @@ def main(args, battleschool_dir=None):
         # let inventory know which playbooks are using so it can know the basedirs
         inventory.set_playbook_basedir(os.path.dirname(playbook))
 
-        runner_cb = BattleschoolRunnerCallbacks()
-        playbook_cb = BattleschoolCallbacks()
-        #TODO: option to use default callbacks
-        # runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
-        # playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
+        if options.use_default_callbacks:
+            runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
+            playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
+        else:
+            runner_cb = BattleschoolRunnerCallbacks()
+            playbook_cb = BattleschoolCallbacks()
 
         if options.step:
             playbook_cb.step = options.step
