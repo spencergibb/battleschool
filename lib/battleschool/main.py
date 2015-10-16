@@ -106,7 +106,7 @@ def main(args, battleschool_dir=None):
     parser.add_option('-X', '--update-sources', dest='update_sources', default=False, action='store_true',
                       help="update playbooks from sources(git, url, etc...)")
     parser.add_option('--acquire-only', dest='acquire_only', default=False, action='store_true',
-                      help="configure mac_pkg module to only aquire package (ie download only")
+                      help="configure mac_pkg module to only aquire package (ie download only)")
 
     options, args = parser.parse_args(args)
     # options.connection = 'local'
