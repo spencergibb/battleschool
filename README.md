@@ -168,7 +168,7 @@ I alias battle to `battle -K`
 
 Force update of the playbooks from a VCS such as git
 
-    -u, --update-vcs      update playbooks from a version control system (vcs)
+    -X, --update-sources      update playbooks from a version control system (vcs)
 
 
 ### battle USAGE
@@ -176,22 +176,33 @@ Force update of the playbooks from a VCS such as git
     Usage: battle
 
     Options:
+      --acquire-only        configure mac_pkg module to only aquire package (ie
+                            download only)
+      --ask-become-pass     ask for privilege escalation password
       -k, --ask-pass        ask for SSH password
-      -K, --ask-sudo-pass   ask for sudo password
+      --ask-su-pass         ask for su password (deprecated, use become)
+      -K, --ask-sudo-pass   ask for sudo password (deprecated, use become)
+      --ask-vault-pass      ask for vault password
+      -b, --become          run operations with become (nopasswd implied)
+      --become-method=BECOME_METHOD
+                            privilege escalation method to use (default=sudo),
+                            valid choices: [ sudo | su | pbrun | pfexec | runas ]
+      --become-user=BECOME_USER
+                            run operations as this user (default=None)
       -C, --check           don't make any changes; instead, try to predict some
                             of the changes that may occur
       --config-dir=CONFIG_DIR
                             config directory for battleschool
-                            (default=/Users/spencergibb/.battleschool)
+                            (default=~/.battleschool)
       --config-file=CONFIG_FILE
                             config file for battleschool
-                            (default=/Users/spencergibb/.battleschool/config.yml)
+                            (default=~/.battleschool/config.yml)
       -c CONNECTION, --connection=CONNECTION
                             connection type to use (default=smart)
       -D, --diff            when changing (small) files and templates, show the
                             differences in those files; works great with --check
       -e EXTRA_VARS, --extra-vars=EXTRA_VARS
-                            set additional key=value variables from the CLI
+                            set additional variables as key=value or YAML/JSON
       -f FORKS, --forks=FORKS
                             specify number of parallel processes to use
                             (default=5)
@@ -205,23 +216,35 @@ Force update of the playbooks from a VCS such as git
                             anything else
       --list-tasks          do list all tasks that would be executed
       -M MODULE_PATH, --module-path=MODULE_PATH
-                            specify path(s) to module library
-                            (default=/usr/share/ansible/)
+                            specify path(s) to module library (default=None)
       -o, --one-line        condense output
       --private-key=PRIVATE_KEY_FILE
                             use this file to authenticate the connection
       --step                one-step-at-a-time: confirm each task before running
-      -s, --sudo            run operations with sudo (nopasswd)
+      -S, --su              run operations with su (deprecated, use become)
+      -R SU_USER, --su-user=SU_USER
+                            run operations with su as this user (default=root)
+                            (deprecated, use become)
+      -s, --sudo            run operations with sudo (nopasswd) (deprecated, use
+                            become)
+      -U SUDO_USER, --sudo-user=SUDO_USER
+                            desired sudo user (default=root) (deprecated, use
+                            become)
       --syntax-check        do a playbook syntax check on the playbook, do not
                             execute the playbook
-      --tags=TAGS           only run plays and tasks tagged with these values
       -T TIMEOUT, --timeout=TIMEOUT
                             override the SSH timeout in seconds (default=10)
       -t TREE, --tree=TREE  log output to this directory
-      -u, --update-source   update playbooks from sources(git, url, etc...)
+      -X, --update-sources  update playbooks from sources(git, url, etc...)
+      -u REMOTE_USER, --user=REMOTE_USER
+                            connect as this user (default=sgibb)
+      --vault-password-file=VAULT_PASSWORD_FILE
+                            vault password file
       -v, --verbose         verbose mode (-vvv for more, -vvvv to enable
                             connection debugging)
       --version             show program's version number and exit
+      
+    For more options see `ansible-playbook -h`
 
 =================
 
