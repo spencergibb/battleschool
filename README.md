@@ -209,7 +209,7 @@ Force update of the playbooks from a VCS such as git
       -h, --help            show this help message and exit
       -i INVENTORY, --inventory-file=INVENTORY
                             specify inventory host file
-                            (default=/usr/share/battleschool/defaults/hosts)
+                            (default=/usr/local/share/battleschool/defaults/hosts)
       -l SUBSET, --limit=SUBSET
                             further limit selected hosts to an additional pattern
       --list-hosts          outputs a list of matching hosts; does not execute
