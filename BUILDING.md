@@ -32,4 +32,5 @@ then
 
 #### Tips for building on a blank osx vm
 
-http://ntk.me/2012/09/07/os-x-on-os-x/
+* http://anadoxin.org/blog/creating-a-bootable-el-capitan-iso-image.html
+* http://ntk.me/2012/09/07/os-x-on-os-x/
