@@ -129,7 +129,8 @@ def main(args, battleschool_dir=None):
     if not options.listhosts and not options.syntax and not options.listtasks:
         options.ask_pass = AC.DEFAULT_ASK_PASS
         options.ask_sudo_pass = options.ask_sudo_pass or AC.DEFAULT_ASK_SUDO_PASS
-        passwds = utils.ask_passwords(ask_pass=options.ask_pass, become_ask_pass=options.ask_sudo_pass)
+        options.become_method = options.become_method or AC.DEFAULT_BECOME_METHOD
+        passwds = utils.ask_passwords(ask_pass=options.ask_pass, become_ask_pass=options.ask_sudo_pass, ask_vault_pass=options.ask_vault_pass, become_method=options.become_method)
         sshpass = passwds[0]
         sudopass = passwds[1]
         vault_pass = passwds[2]
