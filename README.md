@@ -236,6 +236,9 @@ Force update of the playbooks from a VCS such as git
                             override the SSH timeout in seconds (default=10)
       -t TREE, --tree=TREE  log output to this directory
       -X, --update-sources  update playbooks from sources(git, url, etc...)
+      --use-default-callbacks
+                            use default ansible callbacks (to exec vars_prompt,
+                            etc.)
       -u REMOTE_USER, --user=REMOTE_USER
                             connect as this user (default=sgibb)
       --vault-password-file=VAULT_PASSWORD_FILE
