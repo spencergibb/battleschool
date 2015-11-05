@@ -21,6 +21,14 @@ See this [blog post](http://spencer.gibb.us/blog/2014/02/03/introducing-battlesc
 ### running battleschool for the first time
 
     battle --config-file http://somesite/path/to/your/config.yml
+    
+### installing on linux
+
+*NOTE*: You'll need to install libyaml-dev
+    
+e.g. on ubuntu based systems
+
+    sudo apt-get install libyaml-dev    
 
 As long as your `config.yml` doesn't have a `source.local` section (see [configuration](#configuration) below), you don't need to download or create a configuration for the first time.
 
