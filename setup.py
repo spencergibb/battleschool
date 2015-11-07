@@ -2,14 +2,10 @@
 
 import os
 import sys
-from glob import glob
 
 sys.path.insert(0, os.path.abspath('lib'))
 from battleschool import __version__, __author__
 from distutils.core import setup
-
-# find library modules
-from battleschool.constants import DIST_MODULE_PATH
 
 long_description = """
 Development environment provisioning using ansible (http://docs.ansible.com),
@@ -18,15 +14,14 @@ kitchenplan (https://github.com/kitchenplan/kitchenplan) which uses chef (http:/
 Built on and for macs, but should be usable on Linux
 """
 
-share_path = "./share/"
-files = os.listdir(share_path)
-data_files = []
-for i in files:
-    if os.path.isdir(os.path.join(share_path, i)):
-        data_files.append((DIST_MODULE_PATH + i, glob(share_path + i + '/*')))
-
-    #if os.path.isfile(os.path.join(share_path, i)):
-    #    data_files.append((DIST_MODULE_PATH, share_path + i))
+package_dir = 'lib/battleschool'
+package_data = []
+top_dir = os.getcwd()
+os.chdir(package_dir)
+for dirpath, dirnames, filenames in os.walk('share'):
+    data = [ os.path.join(dirpath, filename) for filename in filenames ]
+    package_data.extend(data)
+os.chdir(top_dir)
 
 setup(name='battleschool',
       version=__version__,
@@ -53,13 +48,13 @@ setup(name='battleschool',
           "Topic :: System :: Installation/Setup"
       ],
       keywords="provisioning setup install",
-      package_dir={'battleschool': 'lib/battleschool'},
+      package_dir={'battleschool': package_dir},
+      package_data={'battleschool': package_data},
       packages=[
           'battleschool',
           'battleschool.source',
       ],
       scripts=[
           'bin/battle'
-      ],
-      data_files=data_files
+      ]
 )
