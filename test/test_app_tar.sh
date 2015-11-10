@@ -5,4 +5,4 @@ MODULE_PARAMS="$MODULE_PARAMS archive_path=MacVim-snapshot-72/MacVim.app"
 MODULE_PARAMS="$MODULE_PARAMS creates=MacVim.app"
 
 #echo $MODULE_PARAMS
-$ANSIBLE_SRC_PATH/hacking/test-module -m share/library/mac_pkg -a "$MODULE_PARAMS"
+$ANSIBLE_SRC_PATH/hacking/test-module -m lib/battleschool/share/library/mac_pkg -a "$MODULE_PARAMS"

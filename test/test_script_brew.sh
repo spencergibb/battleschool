@@ -6,4 +6,4 @@ MODULE_PARAMS="$MODULE_PARAMS url=https://raw.githubusercontent.com/Homebrew/ins
 #MODULE_PARAMS="$MODULE_PARAMS script_postfix=' < /dev/null'"
 MODULE_PARAMS="$MODULE_PARAMS script_data='\n'"
 #echo $MODULE_PARAMS
-$ANSIBLE_SRC_PATH/hacking/test-module -m share/library/mac_pkg -a "$MODULE_PARAMS"
+$ANSIBLE_SRC_PATH/hacking/test-module -m lib/battleschool/share/library/mac_pkg -a "$MODULE_PARAMS"

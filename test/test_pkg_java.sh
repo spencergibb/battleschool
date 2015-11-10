@@ -7,4 +7,4 @@ MODULE_PARAMS="$MODULE_PARAMS curl_opts='-L --cookie oraclelicense=accept-secure
 MODULE_PARAMS="$MODULE_PARAMS archive_type=dmg"
 MODULE_PARAMS="$MODULE_PARAMS archive_path='JDK 7 Update 51.pkg'"
 #echo $MODULE_PARAMS
-$ANSIBLE_SRC_PATH/hacking/test-module -m share/library/mac_pkg -a "$MODULE_PARAMS"
+$ANSIBLE_SRC_PATH/hacking/test-module -m lib/battleschool/share/library/mac_pkg -a "$MODULE_PARAMS"
