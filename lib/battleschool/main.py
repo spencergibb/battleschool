@@ -72,12 +72,12 @@ def main(args, battleschool_dir=None):
         battleschool_dir = "%s/.battleschool" % os.environ['HOME']
 
     # TODO: make battle OO or more modular
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # make ansible defaults, battleschool defaults
     AC.DEFAULT_HOST_LIST = C.DEFAULT_HOST_LIST
     AC.DEFAULT_SUDO_FLAGS = C.DEFAULT_SUDO_FLAGS
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # create parser for CLI options
     usage = "%prog"
     parser = utils.base_parser(
@@ -116,14 +116,14 @@ def main(args, battleschool_dir=None):
 
     playbooks_to_run = []  #[C.DEFAULT_PLAYBOOK]
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # setup inventory
     inventory = ansible.inventory.Inventory(options.inventory)
     inventory.subset(options.subset)
     if len(inventory.list_hosts()) == 0:
         raise errors.AnsibleError("provided hosts list is empty")
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # setup default options
     sshpass = None
     sudopass = None
@@ -144,14 +144,14 @@ def main(args, battleschool_dir=None):
     extra_vars = utils.parse_extra_vars(options.extra_vars, vault_pass)
     only_tags = None  # options.tags.split(",")
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # setup config_dir and battleschool_dir
     if options.config_dir:
         battleschool_dir = options.config_dir
     else:
         options.config_dir = battleschool_dir
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # setup module_path
     if options.module_path is None:
         options.module_path = AC.DEFAULT_MODULE_PATH
@@ -162,7 +162,7 @@ def main(args, battleschool_dir=None):
     if C.DEFAULT_MODULE_PATH not in options.module_path:
         options.module_path = "%s:%s" % (C.DEFAULT_MODULE_PATH, options.module_path)
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # parse config data
     config_path = load_config_path(options, inventory, sshpass, sudopass)
     if os.path.exists(config_path) and os.path.isfile(config_path):
@@ -170,7 +170,7 @@ def main(args, battleschool_dir=None):
     else:
         config_data = {}
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # set config_dir
     if "cache_dir" in config_data:
         options.cache_dir = os.path.expanduser(config_data["cache_dir"])
@@ -181,7 +181,7 @@ def main(args, battleschool_dir=None):
 
     os.environ["BATTLESCHOOL_CACHE_DIR"] = options.cache_dir
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # setup extra_vars for later use
     if extra_vars is None:
         extra_vars = dict()
@@ -190,14 +190,14 @@ def main(args, battleschool_dir=None):
     extra_vars['battleschool_cache_dir'] = options.cache_dir
     extra_vars['mac_pkg_acquire_only'] = options.acquire_only
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # set mac_version for extra_vars
     if _platform == "darwin":
         mac_version = platform.mac_ver()[0].split(".")
         extra_vars['mac_version'] = mac_version
         extra_vars['mac_major_minor_version'] = "%s.%s" % (mac_version[0], mac_version[1])
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # serialize extra_vars since there is now way to pass data
     # to a module without modifying every playbook
     tempdir = tempfile.gettempdir()
@@ -205,7 +205,11 @@ def main(args, battleschool_dir=None):
     with open(extra_vars_path, 'w') as f:
         f.write(json.dumps(extra_vars))
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
+    # print warnings
+    display(banner("WARNING: the default use of curl's --insecure option is deprecated and will be removed in version 0.9.0"), "yellow")
+
+    # -----------------------------------------------------------
     # setup and run source handlers
     handlers = getSourceHandlers()
 
@@ -220,7 +224,7 @@ def main(args, battleschool_dir=None):
     else:
         display(banner("No sources to update"))
 
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # validate playbooks
     for playbook in playbooks_to_run:
         if not os.path.exists(playbook):
@@ -229,7 +233,7 @@ def main(args, battleschool_dir=None):
             raise errors.AnsibleError("the playbook: %s does not appear to be a file" % playbook)
 
     become = True
-    #-----------------------------------------------------------
+    # -----------------------------------------------------------
     # run all playbooks specified from config
     for playbook in playbooks_to_run:
         stats = callbacks.AggregateStats()
