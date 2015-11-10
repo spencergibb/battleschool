@@ -10,7 +10,7 @@
 
     git checkout master
 
-	 git merge devel
+	git merge devel
 
     make sdist
 
@@ -28,7 +28,7 @@ make sure `~/.pypirc` is setup correctly
 
 then
 
-    python setup.py sdist upload
+    ./pypi_upload.sh
 
 #### Tips for building on a blank osx vm
 
