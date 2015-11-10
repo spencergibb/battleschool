@@ -207,7 +207,7 @@ def main(args, battleschool_dir=None):
 
     # -----------------------------------------------------------
     # print warnings
-    display(banner("WARNING: the default use of curl's --insecure option is deprecated and will be removed in version 0.9.0"), "yellow")
+    display(banner("WARNING: default use of curl's --insecure option is deprecated & will be removed in ver. 0.9.0 (Dec 2015)"), "yellow")
 
     # -----------------------------------------------------------
     # setup and run source handlers
