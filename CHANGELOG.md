@@ -1,6 +1,6 @@
-### Version 0.7.1
+### Version 0.8.0
 
-- #41 Change location of data files so installions to non-standard locations function vi @dochang.
+- #41 Change location of data files so installations to non-standard locations function vi @dochang.
 
 ### Version 0.7.0
 
