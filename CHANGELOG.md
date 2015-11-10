@@ -1,3 +1,7 @@
+### Version 0.7.1
+
+- #41 Change location of data files so installions to non-standard locations function vi @dochang.
+
 ### Version 0.7.0
 
 - #46 & #37 fixed installs on OS X El Capitan. Moved battleschool files to `/usr/local`
