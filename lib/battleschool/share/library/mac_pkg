@@ -220,7 +220,7 @@ class Archive(object):
 
             self._pkg_path = dest
 
-        return acquired, '**** WARNING: the default use of --insecure is deprecated and will be removed in version 0.9.0 ****'
+        return acquired
 
 
 class ZipArchive(Archive):
@@ -484,7 +484,7 @@ class Installer(object):
         else:
             archive = self._instantiate('archive_type', 'Archive', pkg)
 
-            acquired, acquired_msg = archive.acquire()
+            acquired = archive.acquire()
 
             if acquire_only:
                 if acquired:
@@ -504,12 +504,8 @@ class Installer(object):
 
             archive.close()
             # self.module.exit_json(changed=False, msg="pkg %s, archive %s" % (pkg, archive))
-            installer_msg = "installed package %s" % pkg.name()
 
-            if acquired_msg:
-                installer_msg = "%s (%s)" % (installer_msg, acquired_msg)
-
-            self.module.exit_json(changed=True, version=pkg.version(), msg=installer_msg)
+            self.module.exit_json(changed=True, version=pkg.version(), msg="installed package %s" % pkg.name())
 
     def _instantiate(self, class_key, class_suffix, pkg=None):
         class_name = "%s%s" % (self.params[class_key].title(), class_suffix)
