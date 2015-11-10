@@ -1,6 +1,7 @@
 ### Version 0.8.0
 
-- #41 Change location of data files so installations to non-standard locations function vi @dochang.
+- Print warning about use of curl's `--insecure` option *by default* being deprecated (reported by @bdarnell), see #24.
+- #41 Change location of data files so installations to non-standard locations function via @dochang.
 
 ### Version 0.7.0
 

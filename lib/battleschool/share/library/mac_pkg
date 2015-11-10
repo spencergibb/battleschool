@@ -220,7 +220,7 @@ class Archive(object):
 
             self._pkg_path = dest
 
-        return acquired
+        return acquired, '**** WARNING: the default use of --insecure is deprecated and will be removed in version 0.9.0 ****'
 
 
 class ZipArchive(Archive):
@@ -253,7 +253,7 @@ class TarArchive(Archive):
         self.target_dir = tempfile.mkdtemp(suffix='-tar-extract', prefix='mac_pkg-')
 
     def open(self):
-        #self.module.exit_json(changed=False,msg="tar_path %s, tar_opts %s, pkg_path %s, target_dir %s, archive_path %s"
+        # self.module.exit_json(changed=False,msg="tar_path %s, tar_opts %s, pkg_path %s, target_dir %s, archive_path %s"
         #                                        % (self.tar_path, self.tar_opts, self.pkg_path(), self.target_dir,
         #                                           self.params['archive_path']))
         rc, out, err = self.module.run_command("%s %s %s -C %s" % (self.tar_path, self.tar_opts, self.pkg_path(),
@@ -484,7 +484,7 @@ class Installer(object):
         else:
             archive = self._instantiate('archive_type', 'Archive', pkg)
 
-            acquired = archive.acquire()
+            acquired, acquired_msg = archive.acquire()
 
             if acquire_only:
                 if acquired:
@@ -504,7 +504,12 @@ class Installer(object):
 
             archive.close()
             # self.module.exit_json(changed=False, msg="pkg %s, archive %s" % (pkg, archive))
-            self.module.exit_json(changed=True,  version=pkg.version(), msg="installed package %s" % pkg.name())
+            installer_msg = "installed package %s" % pkg.name()
+
+            if acquired_msg:
+                installer_msg = "%s (%s)" % (installer_msg, acquired_msg)
+
+            self.module.exit_json(changed=True, version=pkg.version(), msg=installer_msg)
 
     def _instantiate(self, class_key, class_suffix, pkg=None):
         class_name = "%s%s" % (self.params[class_key].title(), class_suffix)
